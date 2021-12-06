@@ -72,6 +72,9 @@ class recording extends persistent {
     /** @var int A refresh period for recordings, defaults to 300s (5mins) */
     public const RECORDING_REFRESH_DEFAULT_PERIOD = 300;
 
+    /** @var int A time limit for recordings to be dismissed, defaults to 30d (30days) */
+    public const RECORDING_TIME_LIMIT_DAYS = 30;
+
     /** @var array A cached copy of the metadata */
     protected $metadata = null;
 
@@ -686,7 +689,7 @@ class recording extends persistent {
     protected static function fetch_records(array $selects, array $params): array {
         global $DB;
 
-        $withindays = time() - (30 * DAYSECS);
+        $withindays = time() - (self::RECORDING_TIME_LIMIT_DAYS * DAYSECS);
 
         // Fetch the local data. Arbitrary sort by id, so we get the same result on different db engines.
         $recordings = $DB->get_records_select(static::TABLE, implode(" AND ", $selects), $params,
@@ -768,14 +771,12 @@ class recording extends persistent {
     public static function sync_pending_recordings_from_server(): void {
         global $DB;
 
-        $timelimitdays = 30;
-
         // Fetch the local data.
         mtrace("=> Looking for any recording awaiting processing from the past {$timelimitdays} days.");
         $select = 'status = :status_awaiting AND timecreated > :withindays OR status = :status_reset';
         $recordings = $DB->get_records_select(static::TABLE, $select, [
                 'status_awaiting' => self::RECORDING_STATUS_AWAITING,
-                'withindays' => time() - ($timelimitdays * DAYSECS),
+                'withindays' => time() - (self::RECORDING_TIME_LIMIT_DAYS * DAYSECS),
                 'status_reset' => self::RECORDING_STATUS_RESET,
             ], self::DEFAULT_RECORDING_SORT);
         // Sort by DEFAULT_RECORDING_SORT we get the same result on different db engines.
