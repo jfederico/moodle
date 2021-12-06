@@ -715,7 +715,7 @@ class recording extends persistent {
 
         // Return the instances.
         return array_filter(array_map(function($recording) use ($metadatas, $withindays) {
-            // Do not include it if no metadata was fetched.
+            // Filter out if no metadata was fetched.
             if (!array_key_exists($recording->recordingid, $metadatas)) {
                 // Mark it as dismissed if it is older than 30 days.
                 if ($withindays > $recording->timecreated) {
@@ -725,7 +725,7 @@ class recording extends persistent {
                 return false;
             }
             $metadata = $metadatas[$recording->recordingid];
-            // Do not include it and mark it as deleted if it was deleted in BBB.
+            // Filter out and mark it as deleted if it was deleted in BBB.
             if ($metadata['state'] == 'deleted') {
                 $recording = new self(0, $recording, null);
                 $recording->set_status(self::RECORDING_STATUS_DELETED);
