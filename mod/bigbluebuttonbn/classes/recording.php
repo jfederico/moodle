@@ -701,8 +701,11 @@ class recording extends persistent {
         }, $recordings));
 
         // Fetch all metadata for these recordings.
-        $cfg = \mod_bigbluebuttonbn\local\config::get_options();
-        $metadatas = recording_proxy::fetch_recordings($recordingids, 'recordID', $cfg['recording_refresh_period']);
+        $metadatas = recording_proxy::fetch_recordings($recordingids);
+
+        foreach($recordings as $recording) {
+
+        }
 
         // Return the instances.
         return array_filter(array_map(function($recording) use ($metadatas, $withindays) {
@@ -791,8 +794,7 @@ class recording extends persistent {
 
         // Fetch all metadata for these recordings.
         mtrace("=> Fetching recording metadata from server");
-        $cfg = \mod_bigbluebuttonbn\local\config::get_options();
-        $metadatas = recording_proxy::fetch_recordings($recordingids, 'recordID', $cfg['recording_refresh_period']);
+        $metadatas = recording_proxy::fetch_recordings($recordingids);
 
         $foundcount = 0;
         foreach ($metadatas as $recordingid => $metadata) {
