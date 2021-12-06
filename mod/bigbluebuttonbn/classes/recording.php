@@ -500,6 +500,16 @@ class recording extends persistent {
     }
 
     /**
+     * Update recording status
+     *
+     * @param bool $value
+     */
+    protected function set_status($value) {
+        $this->raw_set('status', $value);
+        $this->update();
+    }
+
+    /**
      * POSSIBLE_REMOTE_META_SOURCE match a field type and its metadataname (historical and current).
      */
     const POSSIBLE_REMOTE_META_SOURCE = [
@@ -710,8 +720,7 @@ class recording extends persistent {
                 // Mark it as dismissed if it is older than 30 days.
                 if ($withindays > $recording->timecreated) {
                     $recording = new self(0, $recording, null);
-                    $recording->raw_set('status', self::RECORDING_STATUS_DISMISSED);
-                    $recording->update();
+                    $recording->set_status(self::RECORDING_STATUS_DISMISSED);
                 }
                 return false;
             }
@@ -719,8 +728,7 @@ class recording extends persistent {
             // Do not include it and mark it as deleted if it was deleted in BBB.
             if ($metadata['state'] == 'deleted') {
                 $recording = new self(0, $recording, null);
-                $recording->raw_set('status', self::RECORDING_STATUS_DELETED);
-                $recording->update();
+                $recording->set_status(self::RECORDING_STATUS_DELETED);
                 return false;
             }
             // Include it otherwise.
@@ -798,8 +806,7 @@ class recording extends persistent {
             $id = array_search($recordingid, $recordingids);
 
             $recording = new self(0, $recordings[$id], $metadata);
-            $recording->raw_set('status', self::RECORDING_STATUS_PROCESSED);
-            $recording->update();
+            $recording->set_status(self::RECORDING_STATUS_PROCESSED);
             $foundcount++;
         }
 
