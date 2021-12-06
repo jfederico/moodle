@@ -703,10 +703,6 @@ class recording extends persistent {
         // Fetch all metadata for these recordings.
         $metadatas = recording_proxy::fetch_recordings($recordingids);
 
-        foreach($recordings as $recording) {
-
-        }
-
         // Return the instances.
         return array_filter(array_map(function($recording) use ($metadatas, $withindays) {
             // Do not include it if no metadata was fetched.
