@@ -35,6 +35,9 @@ class config {
     /** @var string Default bigbluebutton server shared secret */
     public const DEFAULT_SHARED_SECRET = '0b21fcaf34673a8c3ec8ed877d76ae34';
 
+    /** @var string Old default bigbluebutton server url (kept for compatibility) */
+    public const OLD_DEFAULT_SERVER_URL = 'http://test-install.blindsidenetworks.com/bigbluebutton/';
+
     /**
      * Returns moodle version.
      *

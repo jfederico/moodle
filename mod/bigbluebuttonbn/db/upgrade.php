@@ -25,6 +25,7 @@
  */
 
 use mod_bigbluebuttonbn\plugin;
+use mod_bigbluebuttonbn\local\config;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -344,6 +345,7 @@ function xmldb_bigbluebuttonbn_upgrade($oldversion = 0) {
         // Bigbluebuttonbn savepoint reached.
         upgrade_mod_savepoint(true, 2021072905, 'bigbluebuttonbn');
     }
+
     if ($oldversion < 2021072906) {
 
         // Rename field recording on table bigbluebuttonbn_recordings to remotedata, add new remotedatatstamp and status.
@@ -418,6 +420,17 @@ function xmldb_bigbluebuttonbn_upgrade($oldversion = 0) {
 
         // Bigbluebuttonbn savepoint reached.
         upgrade_mod_savepoint(true, 2021083101, 'bigbluebuttonbn');
+    }
+
+    if ($oldversion < 2021091408) {
+        // Change BigBliueButton Server credentials to new defaults if test-install is being used.
+        $serverurl = config::get('server_url');
+        if ($serverurl == config::OLD_DEFAULT_SERVER_URL) {
+            set_config('bigbluebuttonbn_server_url', config::DEFAULT_SERVER_URL);
+            set_config('bigbluebuttonbn_shared_secret', config::DEFAULT_SHARED_SECRET);
+        }
+        // Bigbluebuttonbn savepoint reached.
+        upgrade_mod_savepoint(true, 2021091408, 'bigbluebuttonbn');
     }
 
     return true;
