@@ -80,7 +80,6 @@ class curl extends \curl {
      * @param string $url
      * @param array|string $params
      * @param array $options
-     * @return bool
      */
     public function post($url, $params = '', $options = []) {
         if (!is_string($params)) {
@@ -96,7 +95,7 @@ class curl extends \curl {
             ],
         ];
 
-        return !empty($this->handle_response(parent::post($url, $params, $options)));
+        return $this->handle_response(parent::post($url, $params, $options));
     }
 
     /**

@@ -68,15 +68,17 @@ class files {
     /**
      * Helper for getting pluginfile.
      *
-     * @param stdClass $course course object
-     * @param \cm_info $cm course module object
+     * @param stdClass|null $course course object
+     * @param stdClass|null $cm course module object
      * @param context $context context object
      * @param string $filearea file area
      * @param array $args extra arguments
      *
      * @return \stored_file|bool
+     * @throws \coding_exception
+     * @throws \dml_exception
      */
-    public static function pluginfile_file(stdClass $course, \cm_info $cm, context $context, string $filearea, array $args) {
+    public static function pluginfile_file(?stdClass $course, ?stdClass $cm, context $context, string $filearea, array $args) {
         $filename = self::get_plugin_filename($course, $cm, $context, $args);
         if (!$filename) {
             return false;
@@ -213,14 +215,18 @@ class files {
     /**
      * Helper for getting pluginfile name.
      *
-     * @param stdClass $course course object
-     * @param \cm_info $cm course module object
+     * @param stdClass|null $course course object
+     * @param stdClass|null $cm course module object
      * @param context $context context object
      * @param array $args extra arguments
      *
      * @return string|null
+     * @throws \coding_exception
+     * @throws \dml_exception
+     * @throws \moodle_exception
+     * @throws \require_login_exception
      */
-    public static function get_plugin_filename(stdClass $course, \cm_info $cm, context $context, array $args): ?string {
+    public static function get_plugin_filename(?stdClass $course, ?stdClass $cm, context $context, array $args): ?string {
         global $DB;
         if ($context->contextlevel != CONTEXT_SYSTEM) {
             // Plugin has a file to use as default in general setting.
@@ -245,7 +251,11 @@ class files {
             return ($args['0'] == $actualnonce) ? $args['1'] : null;
 
         }
-        require_course_login($course, true, $cm, true, true);
+        if (!empty($course)) {
+            require_course_login($course, true, $cm, true, true);
+        } else {
+            require_login(null, true, $cm, true, true);
+        }
         if (!has_capability('mod/bigbluebuttonbn:join', $context)) {
             return null;
         }
