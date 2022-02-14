@@ -228,17 +228,6 @@ class setting_validator {
     }
 
     /**
-     * Validate if lockedlayout section will be shown.
-     *
-     * @return bool
-     */
-    public static function section_lockedlayout_shown() {
-        global $CFG;
-        return (!isset($CFG->bigbluebuttonbn['lockedlayout_default']) ||
-            !isset($CFG->bigbluebuttonbn['lockedlayout_editable']));
-    }
-
-    /**
      * Validate if lockonjoin section will be shown.
      *
      * @return bool
