@@ -106,12 +106,8 @@ class config {
             'disablenote_editable' => true,
             'hideuserlist_default' => false,
             'hideuserlist_editable' => true,
-            'lockedlayout_default' => false,
-            'lockedlayout_editable' => true,
-            'lockonjoin_default' => false,
-            'lockonjoin_editable' => true,
-            'lockonjoinconfigurable_default' => false,
-            'lockonjoinconfigurable_editable' => true,
+            'lockonjoin_default' => true,
+            'lockonjoin_editable' => false,
             'welcome_default' => '',
         ];
     }
@@ -217,12 +213,8 @@ class config {
                'disablenote_default' => self::get('disablenote_default'),
                'hideuserlist_editable' => self::get('hideuserlist_editable'),
                'hideuserlist_default' => self::get('hideuserlist_default'),
-               'lockedlayout_editable' => self::get('lockedlayout_editable'),
-               'lockedlayout_default' => self::get('lockedlayout_default'),
                'lockonjoin_editable' => self::get('lockonjoin_editable'),
                'lockonjoin_default' => self::get('lockonjoin_default'),
-               'lockonjoinconfigurable_editable' => self::get('lockonjoinconfigurable_editable'),
-               'lockonjoinconfigurable_default' => self::get('lockonjoinconfigurable_default'),
                'welcome_default' => self::get('welcome_default'),
         ];
     }

@@ -228,17 +228,6 @@ class setting_validator {
     }
 
     /**
-     * Validate if lockedlayout section will be shown.
-     *
-     * @return bool
-     */
-    public static function section_lockedlayout_shown() {
-        global $CFG;
-        return (!isset($CFG->bigbluebuttonbn['lockedlayout_default']) ||
-            !isset($CFG->bigbluebuttonbn['lockedlayout_editable']));
-    }
-
-    /**
      * Validate if lockonjoin section will be shown.
      *
      * @return bool
@@ -247,16 +236,5 @@ class setting_validator {
         global $CFG;
         return (!isset($CFG->bigbluebuttonbn['lockonjoin_default']) ||
             !isset($CFG->bigbluebuttonbn['lockonjoin_editable']));
-    }
-
-    /**
-     * Validate if lockonjoinconfigurable section will be shown.
-     *
-     * @return bool
-     */
-    public static function section_lockonjoinconfigurable_shown() {
-        global $CFG;
-        return (!isset($CFG->bigbluebuttonbn['lockonjoinconfigurable_default']) ||
-            !isset($CFG->bigbluebuttonbn['lockonjoinconfigurable_editable']));
     }
 }
