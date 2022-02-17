@@ -192,7 +192,6 @@ class recording_proxy extends proxy_base {
             $fetchrecordings = self::fetch_recordings_page($ids, $key);
             $cache->set_many($fetchrecordings);
             $currentfetchcache->set_many(array_flip(array_keys($fetchrecordings)));
-
             $recordings += $fetchrecordings;
         }
         // Sort recordings.
@@ -223,26 +222,27 @@ class recording_proxy extends proxy_base {
         }
 
         $recordings = [];
-        // If there were meetings already created.
+        // If there were recordings already created.
         foreach ($xml->recordings->recording as $recordingxml) {
             $recording = self::parse_recording($recordingxml);
-            $recordings[$recording['recordID']] = $recording;
-
-            // Check if there is childs.
-            if (isset($recordingxml->breakoutRooms->breakoutRoom)) {
+            // Check if there are any child.
+            if (isset($recordingxml->breakoutRooms)) {
+                $breakoutrooms = [];
                 foreach ($recordingxml->breakoutRooms->breakoutRoom as $breakoutroom) {
-                    $xml = self::fetch_endpoint_xml('getRecordings', ['recordID' => implode(',', (array) $breakoutroom)]);
-                    if (!$xml || $xml->returncode != 'SUCCESS' || empty($xml->recordings)) {
-                        continue;
-                    }
-
-                    // If there were meetings already created.
-                    foreach ($xml->recordings->recording as $subrecordingxml) {
-                        $recording = self::parse_recording($subrecordingxml);
-                        $recordings[$recording['recordID']] = $recording;
+                    $breakoutrooms[] = trim((string) $breakoutroom);
+                }
+                if (!empty($breakoutrooms)) {
+                    $xml = self::fetch_endpoint_xml('getRecordings', ['recordID' => implode(',', $breakoutrooms)]);
+                    if ($xml && $xml->returncode == 'SUCCESS' && isset($xml->recordings)) {
+                        // If there were already created meetings.
+                        foreach ($xml->recordings->recording as $subrecordingxml) {
+                            $breakoutrecording = self::parse_recording($subrecordingxml);
+                            $recording['breakouts'][$breakoutrecording['recordID']] = $breakoutrecording;
+                        }
                     }
                 }
             }
+            $recordings[$recording['recordID']] = $recording;
         }
 
         return $recordings;
