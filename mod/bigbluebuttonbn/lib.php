@@ -475,7 +475,13 @@ function mod_bigbluebuttonbn_core_calendar_provide_event_action(
     // Get if the room is available.
     $roomavailable = $instance->is_currently_open();
     // Get if the user can join.
-    $meetinginfo = meeting::get_meeting_info_for_instance($instance);
+    try {
+        $meetinginfo = meeting::get_meeting_info_for_instance($instance);
+    } catch (moodle_exception $e) {
+        // If server is not available send a debugging message and abort.
+        debugging($e->getMessage(), DEBUG_NORMAL, $e->getTrace());
+        return null;
+    }
     $usercanjoin = $meetinginfo->canjoin;
 
     // Check if the room is closed and the user has already joined this session or played the record.

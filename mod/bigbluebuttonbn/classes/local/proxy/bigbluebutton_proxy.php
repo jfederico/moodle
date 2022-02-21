@@ -24,6 +24,7 @@ use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\exceptions\bigbluebutton_exception;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
+use moodle_exception;
 use moodle_url;
 use stdClass;
 
@@ -361,6 +362,30 @@ class bigbluebutton_proxy extends proxy_base {
     }
 
     /**
+     * Handle the server connexion leading to an exception.
+     *
+     * @param instance $instance
+     * @param moodle_exception $e
+     */
+    public static function print_server_exception(instance $instance, moodle_exception $e): void {
+        $actions = [
+                [
+                        'title' => get_string('view'),
+                        'url' => self::get_server_not_available_url($instance)->out(false),
+                        'newwindow' => false,
+                        'data' => []
+                ],
+        ];
+        $icon = [
+                'pix' => 'i/caution',
+                'component' => 'core'
+        ];
+        \core\notification::add_call_to_action($icon,
+                get_string('general_error_unable_connect', 'mod_bigbluebuttonbn', $e->getMessage()),
+                $actions);
+    }
+
+    /**
      * Get message when server not available
      *
      * @param instance $instance
@@ -380,15 +405,15 @@ class bigbluebutton_proxy extends proxy_base {
      * Get URL to the page displaying that the server is not available
      *
      * @param instance $instance
-     * @return string
+     * @return moodle_url
      */
-    public static function get_server_not_available_url(instance $instance): string {
+    public static function get_server_not_available_url(instance $instance): moodle_url {
         if ($instance->is_admin()) {
-            return new moodle_url('/admin/settings.php', ['section' => 'modsettingbigbluebuttonbn']);
+            return new moodle_url('/admin/category.php', ['category' => 'modsettingbigbluebuttonbn']);
         } else if ($instance->is_moderator()) {
-            return new moodle_url('/course/view.php', ['id' => $instance->get_course_id()]);
+            return new moodle_url('/mod/bigbluebuttonbn/view.php', ['id' => $instance->get_cm_id()]);
         } else {
-            return new moodle_url('/course/view.php', ['id' => $instance->get_course_id()]);
+            return new moodle_url('/mod/bigbluebuttonbn/view.php', ['id' => $instance->get_cm_id()]);
         }
     }
 

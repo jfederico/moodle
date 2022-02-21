@@ -89,12 +89,20 @@ class view_page implements renderable, templatable {
         }
 
         if ($this->instance->is_feature_enabled('showroom')) {
-            $roomdata = meeting::get_meeting_info_for_instance($this->instance);
-            $roomdata->haspresentations = false;
-            if (!empty($roomdata->presentations)) {
-                $roomdata->haspresentations = true;
+            try {
+                $roomdata = meeting::get_meeting_info_for_instance($this->instance);
+                $roomdata->haspresentations = false;
+                if (!empty($roomdata->presentations)) {
+                    $roomdata->haspresentations = true;
+                }
+                $templatedata->room = $roomdata;
+            } catch (\moodle_exception $e) {
+                $templatedata->servererror = (new notification(
+                        $e->getMessage(),
+                        notification::NOTIFY_ERROR,
+                        false
+                ))->export_for_template($output);
             }
-            $templatedata->room = $roomdata;
         }
 
         if ($this->instance->is_feature_enabled('showrecordings') && $this->instance->is_recorded()) {

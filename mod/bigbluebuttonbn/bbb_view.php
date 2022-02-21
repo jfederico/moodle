@@ -25,7 +25,6 @@
 
 use core\notification;
 use mod_bigbluebuttonbn\instance;
-use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\logger;
 use mod_bigbluebuttonbn\meeting;
@@ -135,8 +134,11 @@ switch (strtolower($action)) {
         try {
             $url = meeting::join_meeting($instance, $origin);
             redirect($url);
-        } catch (server_not_available_exception $e) {
-            bigbluebutton_proxy::handle_server_not_available($instance);
+        } catch (moodle_exception $e) {
+            echo $OUTPUT->header();
+            bigbluebutton_proxy::print_server_exception($instance, $e);
+            echo $OUTPUT->footer();
+            die();
         }
         // We should never reach this point.
         break;
