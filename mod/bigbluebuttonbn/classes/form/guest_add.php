@@ -45,7 +45,6 @@ class guest_add extends dynamic_form {
      * @return array
      */
     public function process_dynamic_submission(): array {
-        global $USER;
         $data = $this->get_data();
         $allmails = [];
         if (!empty($data->emails)) {
@@ -56,15 +55,8 @@ class guest_add extends dynamic_form {
                     $allmails[] = $email;
                 }
             }
-            $adhoctask = new send_guest_emails();
-            $adhoctask->set_custom_data(
-                [
-                    'emails' => $allmails,
-                    'useridfrom' => $USER->id
-                ]
-            );
-            $adhoctask->set_instance_id($data->id);
-            \core\task\manager::queue_adhoc_task($adhoctask);
+            $instance = $this->get_instance_from_params();
+            $instance->add_guests($allmails);
         }
         return [
             'result' => true,

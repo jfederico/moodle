@@ -297,4 +297,17 @@ class extension_test extends \advanced_testcase {
             set_config('disabled', 'disabled', $plugin);
         }
     }
+
+    /**
+     * Test that extension has been notified that a guest has been added
+     * @covers \mod_bigbluebuttonbn\instance::add_guests
+     */
+    public function test_extension_guest_emails_callback(): void {
+        $this->resetAfterTest();
+        list($bbactivitycontext, $bbactivitycm, $bbactivity) = $this->create_instance();
+        $instance = instance::get_from_instanceid($bbactivity->id);
+        $emails = ['email1@email.com', 'email2@email.com'];
+        $instance->add_guests($emails);
+        $this->assertEquals(join(',', $emails), get_config('bbbext_simple', 'bbbext_simple_meeting_add_guests'));
+    }
 }

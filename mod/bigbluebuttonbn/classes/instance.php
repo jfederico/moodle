@@ -25,6 +25,7 @@ use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\helpers\files;
 use mod_bigbluebuttonbn\local\helpers\roles;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
+use mod_bigbluebuttonbn\task\send_guest_emails;
 use moodle_url;
 use stdClass;
 
@@ -1289,7 +1290,7 @@ EOF;
      */
     public function is_guest_allowed(): bool {
         return !$this->is_type_recordings_only() &&
-                config::get('guestaccess_enabled') && $this->get_instance_var('guestallowed');
+            config::get('guestaccess_enabled') && $this->get_instance_var('guestallowed');
     }
 
     /**
@@ -1316,5 +1317,36 @@ EOF;
         [$this->instancedata->guestlinkuid, $this->instancedata->guestpassword] =
             \mod_bigbluebuttonbn\plugin::generate_guest_meeting_credentials();
         $DB->update_record('bigbluebuttonbn', $this->instancedata);
+    }
+
+    /**
+     * Add guest to current instance
+     *
+     * This will launch an adhoc task to send emails to guest and call back any plugin that
+     * would need to take care (or record) of additional guest users.
+     *
+     * @param array $guestemails
+     * @return void
+     */
+    public function add_guests(array $guestemails) {
+        global $USER;
+        $adhoctask = new send_guest_emails();
+        $adhoctask->set_custom_data(
+            [
+                'emails' => $guestemails,
+                'useridfrom' => $USER->id,
+            ]
+        );
+        $adhoctask->set_instance_id($this->get_instance_id());
+        \core\task\manager::queue_adhoc_task($adhoctask);
+        $callbacks = get_plugins_with_function('meeting_add_guests');
+        foreach ($callbacks as $plugintype => $plugins) {
+            if ($plugintype !== 'bbbext') {
+                continue; // Skip.
+            }
+            foreach ($plugins as $plugin => $callback) {
+                $callback($guestemails, $this->get_instance_id());
+            }
+        }
     }
 }
