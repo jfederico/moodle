@@ -18,6 +18,7 @@ namespace mod_bigbluebuttonbn;
 use cache;
 use cm_info;
 use mod_bigbluebuttonbn\local\extension\action_url_addons;
+use mod_bigbluebuttonbn\local\extension\analytics_callback_addons;
 use mod_bigbluebuttonbn\local\extension\custom_completion_addons;
 use mod_bigbluebuttonbn\local\extension\mod_form_addons;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
@@ -216,5 +217,24 @@ class extension {
         foreach ($formmanagersclasses as $fmclass) {
             $fmclass->delete_instance($id);
         }
+    }
+
+    /**
+     * Get all analytics_callback addons classes.
+     *
+     * @return array of analytics_callback addon classes.
+     */
+    public static function analytics_callback_addons_classes(): array {
+        return self::get_classes_implementing(analytics_callback_addons::class);
+    }
+
+    /**
+     * Get all analytics_callback addons classes instances
+     *
+     * @param instance|null $instance
+     * @return array of custom completion addon classes instances
+     */
+    public static function analytics_callback_addons_instances(instance $instance): array {
+        return self::get_instances_implementing(analytics_callback_addons::class, [$instance]);
     }
 }
