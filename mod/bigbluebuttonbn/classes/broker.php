@@ -32,7 +32,7 @@ use mod_bigbluebuttonbn\local\config;
 class broker {
 
     /** @var array List of required params */
-    protected $requiredparams = [
+    protected static $requiredparams = [
         'recording_ready' => [
             'bigbluebuttonbn' => 'The BigBlueButtonBN instance ID must be specified.',
             'signed_parameters' => 'A JWT encoded string must be included as [signed_parameters].'
@@ -48,16 +48,16 @@ class broker {
      * @param array $params
      * @return null|string
      */
-    public function validate_parameters(array $params): ?string {
+    public static function validate_parameters(array $params): ?string {
         if (!isset($params['action']) || empty($params['action']) ) {
             return 'Parameter ['.$params['action'].'] was not included';
         }
 
         $action = strtolower($params['action']);
-        if (!array_key_exists($action, $this->requiredparams)) {
+        if (!array_key_exists($action, self::$requiredparams)) {
             return "Action {$params['action']} can not be performed.";
         }
-        return $this->validate_parameters_message($params, $this->requiredparams[$action]);
+        return self::validate_parameters_message($params, self::$requiredparams[$action]);
     }
 
     /**
@@ -153,6 +153,7 @@ class broker {
 
             // Get JSON string from the body.
             $jsonstr = file_get_contents('php://input');
+            debugging($jsonstr, DEBUG_DEVELOPER);
 
             // Convert JSON string to a JSON object.
             $jsonobj = json_decode($jsonstr);

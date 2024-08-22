@@ -18,6 +18,7 @@ namespace mod_bigbluebuttonbn;
 use cache;
 use cm_info;
 use mod_bigbluebuttonbn\local\extension\action_url_addons;
+use mod_bigbluebuttonbn\local\extension\bbb_broker_addons;
 use mod_bigbluebuttonbn\local\extension\custom_completion_addons;
 use mod_bigbluebuttonbn\local\extension\mod_form_addons;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
@@ -217,4 +218,25 @@ class extension {
             $fmclass->delete_instance($id);
         }
     }
+
+    /**
+     * Get all bbb_broker addons classes.
+     *
+     * @return array of bbb_broker addon classes.
+     */
+    public static function bbb_broker_addons_classes(): array {
+        return self::get_classes_implementing(bbb_broker_addons::class);
+    }
+
+    /**
+     * Get all mod_form addons classes instances
+     *
+     * @param instance|null $instance
+     * @param string|null $action
+     * @return array of custom completion addon classes instances
+     */
+    public static function bbb_broker_addons_instances(instance $instance, $action): array {
+        return self::get_instances_implementing(bbb_broker_addons::class, [$instance, $action]);
+    }
+
 }

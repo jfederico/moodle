@@ -30,6 +30,7 @@ require(__DIR__ . '/../../config.php');
 
 use Firebase\JWT\Key;
 use mod_bigbluebuttonbn\broker;
+use mod_bigbluebuttonbn\extension;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\meeting;
@@ -38,35 +39,45 @@ global $PAGE, $USER, $CFG, $SESSION, $DB;
 
 $params = $_REQUEST;
 
-$broker = new broker();
-$error = $broker->validate_parameters($params);
+$error = broker::validate_parameters($params);
 if (!empty($error)) {
-    header('HTTP/1.0 400 Bad Request. ' . $error);
+    send_header_and_debug('HTTP/1.0 400 Bad Request.', $error);
     return;
 }
-
 $action = $params['action'];
+
+error_log(">>>>>>>>>>>> Processing action '{$action}' for instance '{$params['bigbluebuttonbn']}'.", DEBUG_DEVELOPER);
 
 $instance = instance::get_from_instanceid($params['bigbluebuttonbn']);
 if (empty($instance)) {
-    header('HTTP/1.0 410 Gone. The activity may have been deleted');
+    send_header_and_debug('HTTP/1.0 410 Gone.', 'The activity may have been deleted');
     return;
 }
 
 $PAGE->set_context($instance->get_context());
 
-try {
-    switch (strtolower($action)) {
-        case 'recording_ready':
-            broker::process_recording_ready($instance, $params);
-            return;
-        case 'meeting_events':
-            // When meeting_events callback is implemented by BigBlueButton, Moodle receives a POST request
-            // which is processed in the function using super globals.
-            broker::process_meeting_events($instance);
-            return;
+$brokerextensions = mod_bigbluebuttonbn\extension::bbb_broker_addons_instances($instance, strtolower($action));
+error_log(">>>>>>>>>>>> Found " . count($brokerextensions) . " extensions for action '{$action}'.", DEBUG_DEVELOPER);
+
+$processed = false;
+foreach ($brokerextensions as $brokerextension) {
+    try {
+        $processed = $brokerextension->process_action($params);
+        // Do not return here as we want to process all the extensions.
+    } catch (Exception $e) {
+        send_header_and_debug('HTTP/1.0 500 Internal Server Error.', $e->getMessage());
+        return;
     }
-    header("HTTP/1.0 400 Bad request. The action '{$action}' does not exist");
-} catch (Exception $e) {
-    header('HTTP/1.0 500 Internal Server Error. ' . $e->getMessage());
+}
+if ($processed) {
+    send_header_and_debug('HTTP/1.0 200 OK.', "Action '{$action}' processed successfully.", false);
+    return;
+}
+
+send_header_and_debug('HTTP/1.0 400 Bad Request.', "The action '{$action}' does not exist.");
+
+
+function send_header_and_debug($header, $message = '') {
+    debugging("$header $message", DEBUG_DEVELOPER);
+    header($header);
 }
