@@ -496,6 +496,7 @@ class meeting {
         $meta['internalmeetingid'] = $data->{'internal_meeting_id'};
         $meta['callback'] = 'meeting_events';
         $meta['meetingid'] = $data->{'meeting_id'};
+        $meta['data'] = $data->{'data'};
 
         $eventcount = logger::log_event_callback($instance, $overrides, $meta);
         if ($eventcount === 1) {
