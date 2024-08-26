@@ -33,22 +33,22 @@ use mod_bigbluebuttonbn\meeting;
 abstract class broker_meeting_events_addons {
 
     /**
-     * @var instance|null $instance BigBlueButton instance if any
+     * @var instance $instance BigBlueButton instance if any
      */
-    protected $instance = null;
+    protected $instance;
 
     /**
-     * @var string|null $data data to be processed
+     * @var string $data data to be processed
      */
-    protected $data = null;
+    protected $data;
 
     /**
      * Constructor
      *
-     * @param instance|null $instance BigBlueButton instance if any
-     * @param string|null $data data to be processed
+     * @param instance $instance BigBlueButton instance
+     * @param string $data data to be processed
      */
-    public function __construct(?instance $instance = null, ?string $data = null) {
+    public function __construct(instance $instance, string $data) {
         $this->instance = $instance;
         $this->data = $data;
     }
