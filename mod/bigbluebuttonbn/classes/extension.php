@@ -19,6 +19,7 @@ use cache;
 use cm_info;
 use mod_bigbluebuttonbn\local\extension\action_url_addons;
 use mod_bigbluebuttonbn\local\extension\custom_completion_addons;
+use mod_bigbluebuttonbn\local\extension\gradebook_addons;
 use mod_bigbluebuttonbn\local\extension\mod_form_addons;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
 use stdClass;
@@ -216,5 +217,24 @@ class extension {
         foreach ($formmanagersclasses as $fmclass) {
             $fmclass->delete_instance($id);
         }
+    }
+
+    /**
+     * Get all gradebook addons classes.
+     *
+     * @return array of gradebook addon classes.
+     */
+    public static function gradebook_addons_classes(): array {
+        return self::get_classes_implementing(gradebook_addons::class);
+    }
+
+    /**
+     * Get all gradebook addons classes instances
+     *
+     * @param stdClass|null $modinstance
+     * @return array of gradebook addon classes instances
+     */
+    public static function gradebook_addons_instances(stdClass $modinstance): array {
+        return self::get_instances_implementing(gradebook_addons::class, [$modinstance]);
     }
 }

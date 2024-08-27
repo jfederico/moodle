@@ -72,7 +72,7 @@ function bigbluebuttonbn_supports($feature) {
         FEATURE_BACKUP_MOODLE2 => true,
         FEATURE_COMPLETION_TRACKS_VIEWS => true,
         FEATURE_COMPLETION_HAS_RULES => true,
-        FEATURE_GRADE_HAS_GRADE => false,
+        FEATURE_GRADE_HAS_GRADE => true,
         FEATURE_GRADE_OUTCOMES => false,
         FEATURE_SHOW_DESCRIPTION => true,
         FEATURE_MOD_PURPOSE => MOD_PURPOSE_COMMUNICATION,
@@ -277,6 +277,42 @@ function bigbluebuttonbn_get_completion_aggregation_state() {
  */
 function bigbluebuttonbn_get_extra_capabilities() {
     return ['moodle/site:accessallgroups'];
+}
+
+/**
+ * Create grade item for given activity.
+ *
+ * @param stdClass $bigbluebuttonbn record with extra cmidnumber
+ * @param array $grades optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @return int 0 if ok, error code otherwise
+ */
+function bigbluebuttonbn_grade_item_update($bigbluebuttonbn, $grades=null) {
+    global $CFG;
+    require_once($CFG->libdir.'/gradelib.php');
+
+    // Hooks for extensions.
+    $extensions = extension::gradebook_addons_instances($bigbluebuttonbn);
+    foreach ($extensions as $extension) {
+        $extension->grade_item_update($grades);
+    }
+}
+
+/**
+ * Update activity grades.
+ *
+ * @param stdClass $bigbluebuttonbn database record
+ * @param int $userid specific user only, 0 means all
+ * @param bool $nullifnone - not used
+ */
+function bigbluebuttonbn_update_grades($bigbluebuttonbn, $userid=0, $nullifnone=true) {
+    global $CFG;
+    require_once($CFG->libdir.'/gradelib.php');
+
+    // Hooks for extensions.
+    $extensions = extension::gradebook_addons_instances($bigbluebuttonbn);
+    foreach ($extensions as $extension) {
+        $extension->update_grades($userid, $nullifnone);
+    }
 }
 
 /**
