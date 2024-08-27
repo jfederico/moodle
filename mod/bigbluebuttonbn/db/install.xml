@@ -103,7 +103,7 @@
         <INDEX NAME="recordingid" UNIQUE="false" FIELDS="recordingid"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="bigbluebuttonbn_grades" COMMENT="Defines bigbluebuttonbn_grades">
+    <TABLE NAME="bigbluebuttonbn_grades" COMMENT="The bigbluebuttonbn table to store grades awarded to each user">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="bigbluebuttonbnid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>

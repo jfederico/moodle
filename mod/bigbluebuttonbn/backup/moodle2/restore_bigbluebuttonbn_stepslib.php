@@ -43,6 +43,7 @@ class restore_bigbluebuttonbn_activity_structure_step extends restore_activity_s
         $paths[] = $bbb;
         $paths[] = new restore_path_element('bigbluebuttonbn_logs', '/activity/bigbluebuttonbn/logs/log');
         $paths[] = new restore_path_element('bigbluebuttonbn_recordings', '/activity/bigbluebuttonbn/recordings/recording');
+        $paths[] = new restore_path_element('bigbluebuttonbn_grades', '/activity/bigbluebuttonbn/grades/grade');
         $this->add_subplugin_structure('bbbext', $bbb);
         // Return the paths wrapped into standard activity structure.
         return $this->prepare_activity_structure($paths);
@@ -107,6 +108,19 @@ class restore_bigbluebuttonbn_activity_structure_step extends restore_activity_s
         $newitemid = $DB->insert_record('bigbluebuttonbn_recordings', $data);
         // Immediately after inserting associated record, call this.
         $this->set_mapping('bigbluebuttonbn_recordings', $data->id, $newitemid);
+    }
+
+    /**
+     * Process a bigbluebuttonbn_grades restore (additional table).
+     *
+     * @param array $data The data in object form
+     * @return void
+     */
+    protected function process_grade($data) {
+        global $DB;
+        $data = (object) $data;
+        $data->bigbluebuttonbnid = $this->get_new_parentid('bigbluebuttonbn');
+        $DB->insert_record('bigbluebuttonbn_grades', $data);
     }
 
     /**

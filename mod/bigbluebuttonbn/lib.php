@@ -113,6 +113,7 @@ function bigbluebuttonbn_add_instance($bigbluebuttonbn) {
     // Call any active subplugin so to signal a new creation.
     extension::add_instance($bigbluebuttonbn);
 
+    // Update grade.
     bigbluebuttonbn_grade_item_update($bigbluebuttonbn);
 
     return $bigbluebuttonbn->id;
@@ -142,6 +143,7 @@ function bigbluebuttonbn_update_instance($bigbluebuttonbn) {
     // Update a record.
     $DB->update_record('bigbluebuttonbn', $bigbluebuttonbn);
 
+    // Update grades.
     bigbluebuttonbn_grade_item_update($bigbluebuttonbn);
     bigbluebuttonbn_update_grades($bigbluebuttonbn, 0, false);
 
@@ -208,7 +210,7 @@ function bigbluebuttonbn_delete_instance($id) {
 
     $result = true;
 
-    // Delete any dependent records here.
+    // Delete any dependent records.
     $bigbluebuttonbn = $DB->get_record('bigbluebuttonbn', ['id' => $id]);
     bigbluebuttonbn_grade_item_delete($bigbluebuttonbn);
 
@@ -399,7 +401,7 @@ function bigbluebuttonbn_reset_userdata(stdClass $data) {
     }
 
     $DB->delete_records_select('bigbluebuttonbn_grades',
-                'bigbluebuttonbn IN (SELECT id FROM {bigbluebuttonbn} WHERE course = ?)', [$data->course]);
+        'bigbluebuttonbn IN (SELECT id FROM {bigbluebuttonbn} WHERE course = ?)', [$data->course]);
     // Remove all grades from gradebook.
     if (empty($data->reset_gradebook_grades)) {
         bigbluebuttonbn_reset_gradebook($data->courseid, 'reset');
@@ -825,9 +827,9 @@ function bigbluebuttonbn_is_branded(): bool {
  * Update/create grade item for given BigBlueButtonBN activity
  *
  * @category grade
- * @param stdClass $instance A BBB instance object with extra cmidnumber
+ * @param stdClass $instance A BBB instance object
  * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
- * @return object grade_item
+ * @return object grades
  */
 function bigbluebuttonbn_grade_item_update(stdclass $bigbluebuttonbn, $grades=NULL) {
     if (!function_exists('grade_update')) { //workaround for buggy PHP versions
@@ -847,7 +849,6 @@ function bigbluebuttonbn_grade_item_update(stdclass $bigbluebuttonbn, $grades=NU
         $params['reset'] = true;
         $grades = NULL;
     }
-
     return grade_update('mod/bigbluebuttonbn', $bigbluebuttonbn->course, 'mod', 'bigbluebuttonbn', $bigbluebuttonbn->id, 0, $grades, $params);
 }
 
@@ -869,7 +870,6 @@ function bigbluebuttonbn_update_grades($bigbluebuttonbn, $userid=0, $nullifnone=
         $grade->userid   = $userid;
         $grade->rawgrade = NULL;
         bigbluebuttonbn_grade_item_update($bigbluebuttonbn, $grade);
-
     }
 }
 
@@ -883,7 +883,6 @@ function bigbluebuttonbn_update_grades($bigbluebuttonbn, $userid=0, $nullifnone=
 function bigbluebuttonbn_grade_item_delete($bigbluebuttonbn) {
     global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
-
     return grade_update('mod/bigbluebuttonbn', $bigbluebuttonbn->course, 'mod', 'bigbluebuttonbn', $bigbluebuttonbn->id, 0, null, array('deleted' => 1));
 }
 
@@ -937,6 +936,28 @@ function bigbluebuttonbn_get_user_grades($bigbluebuttonbn, $userid=0) {
     if (empty($grades)) {
         return false;
     }
-
     return $grades;
 }
+
+    /**
+     * Function to pass grades into the bigbluebuttonbn_grades table when activity completed.
+     *
+     * @param stdClass $bigbluebuttonbn BigBlueButtonBN instance object
+     * @param int $userid user ID
+     * @param float $grade grade to be saved
+     */
+    function bigbluebuttonbn_pass_grade($bigbluebuttonbn, $userid, $grade) {
+        global $DB;
+        $data = new stdClass();
+        $data->bigbluebuttonbnid = $bigbluebuttonbn->id;
+        $data->userid = $userid;
+        $data->grade = $grade;
+
+        if ($existing = $DB->get_record('bigbluebuttonbn_grades', ['bigbluebuttonbnid' => $bigbluebuttonbn->id, 'userid' => $userid])) {
+            $grade_data->id = $existing->id;
+            $DB->update_record('bigbluebuttonbn_grades', $data);
+        } else {
+            $DB->insert_record('bigbluebuttonbn_grades', $data);
+        }
+        bigbluebuttonbn_update_grades($bigbluebuttonbn, $userid);
+    }

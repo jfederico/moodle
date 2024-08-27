@@ -299,6 +299,9 @@ class bigbluebutton_proxy extends proxy_base {
         if ($bbbcompletion->get_overall_completion_state()) {
             mtrace("Completion for userid $userid and bigbluebuttonid {$bigbluebuttonbn->id} updated.");
             $completion->update_state($cm, COMPLETION_COMPLETE, $userid, true);
+            // Update grade after marking the activity as complete.
+            $grade = 100.0; // Example grade; adjust as needed.
+            bigbluebuttonbn_pass_grade($bigbluebuttonbn, $userid, $grade);
         } else {
             // Still update state to current value (prevent unwanted caching).
             $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);

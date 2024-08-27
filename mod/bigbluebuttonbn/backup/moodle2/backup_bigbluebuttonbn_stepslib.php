@@ -52,7 +52,7 @@ class backup_bigbluebuttonbn_activity_structure_step extends backup_activity_str
             'clienttype', 'muteonstart', 'completionattendance',
             'completionengagementchats', 'completionengagementtalks', 'completionengagementraisehand',
             'completionengagementpollvotes', 'completionengagementemojis',
-            'guestallowed', 'mustapproveuser']);
+            'guestallowed', 'mustapproveuser', 'grade']);
 
         $logs = new backup_nested_element('logs');
 
@@ -65,11 +65,18 @@ class backup_bigbluebuttonbn_activity_structure_step extends backup_activity_str
             'courseid', 'bigbluebuttonbnid', 'groupid', 'recordingid', 'headlesss', 'imported', 'status', 'importeddata',
             'timecreated']);
 
+        $grades = new backup_nested_element('grades');
+
+        $grade = new backup_nested_element('grade', ['id'], [
+            'bigbluebuttonbnid', 'userid', 'grade']);
+
         // Build the tree.
         $bigbluebuttonbn->add_child($logs);
         $logs->add_child($log);
         $bigbluebuttonbn->add_child($recordings);
         $recordings->add_child($recording);
+        $bigbluebuttonbn->add_child($grades);
+        $grades->add_child($grade);
 
         // Define sources.
         $bigbluebuttonbn->set_source_table('bigbluebuttonbn', ['id' => backup::VAR_ACTIVITYID]);
@@ -78,10 +85,12 @@ class backup_bigbluebuttonbn_activity_structure_step extends backup_activity_str
         if ($userinfo) {
             $log->set_source_table('bigbluebuttonbn_logs', ['bigbluebuttonbnid' => backup::VAR_PARENTID]);
             $recording->set_source_table('bigbluebuttonbn_recordings', ['bigbluebuttonbnid' => backup::VAR_PARENTID]);
+            $grade->set_source_table('bigbluebuttonbn_grades', ['bigbluebuttonbnid' => backup::VAR_PARENTID]);
         }
 
         // Define id annotations.
         $log->annotate_ids('user', 'userid');
+        $grade->annotate_ids('user', 'userid');
 
         // Define file annotations.
         $bigbluebuttonbn->annotate_files('mod_bigbluebuttonbn', 'intro', null);
