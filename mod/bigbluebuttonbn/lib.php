@@ -302,7 +302,7 @@ function bigbluebuttonbn_get_extra_capabilities() {
  * @param array $grades optional array/object of grade(s); 'reset' means reset grades in gradebook
  * @return int 0 if ok, error code otherwise
  */
-function bigbluebuttonbn_grade_item_update($bigbluebuttonbn, $grades=null) {
+function bigbluebuttonbn_grade_item_update_new($bigbluebuttonbn, $grades=null) {
     global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
 
@@ -320,7 +320,7 @@ function bigbluebuttonbn_grade_item_update($bigbluebuttonbn, $grades=null) {
  * @param int $userid specific user only, 0 means all
  * @param bool $nullifnone - not used
  */
-function bigbluebuttonbn_update_grades($bigbluebuttonbn, $userid=0, $nullifnone=true) {
+function bigbluebuttonbn_update_grades_new($bigbluebuttonbn, $userid=0, $nullifnone=true) {
     global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
 
