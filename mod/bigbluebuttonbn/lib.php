@@ -776,6 +776,18 @@ function bigbluebuttonbn_grade_item_update(stdclass $bigbluebuttonbn, $grades=NU
     if (!function_exists('grade_update')) { //workaround for buggy PHP versions
         require_once($CFG->libdir.'/gradelib.php');
     }
+
+    // Hook for extensions. We allow extensions to update the grade item. This takes precedence over the default behaviour.
+    $extensions = extension::gradebook_addons_instances($bigbluebuttonbn);
+    foreach ($extensions as $extension) {
+        $grade_item = $extension->grade_item_update($grades);
+        // Only one extension can update the grade item. The first one that does will be used.
+        if ($grade_item) {
+            return $grade_item;
+        }
+    }
+
+    // Since the grade item is not updated by any extension, we update it here.
     $params = array('itemname' => $bigbluebuttonbn->name);
     if ($bigbluebuttonbn->grade > 0) {
         $params['gradetype'] = GRADE_TYPE_VALUE;
@@ -785,5 +797,6 @@ function bigbluebuttonbn_grade_item_update(stdclass $bigbluebuttonbn, $grades=NU
     } else {
         $params['gradetype'] = GRADE_TYPE_NONE;
     }
+
     return grade_update('mod/bigbluebuttonbn', $bigbluebuttonbn->course, 'mod', 'bigbluebuttonbn', $bigbluebuttonbn->id, 0, $grades, $params);
 }
