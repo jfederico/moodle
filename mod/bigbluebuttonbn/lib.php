@@ -24,6 +24,7 @@
  * @author    Fred Dixon  (ffdixon [at] blindsidenetworks [dt] com)
  */
 defined('MOODLE_INTERNAL') || die;
+require_once("$CFG->libdir/gradelib.php");
 
 use core_calendar\action_factory;
 use core_calendar\local\event\entities\action_interface;
@@ -72,7 +73,7 @@ function bigbluebuttonbn_supports($feature) {
         FEATURE_BACKUP_MOODLE2 => true,
         FEATURE_COMPLETION_TRACKS_VIEWS => true,
         FEATURE_COMPLETION_HAS_RULES => true,
-        FEATURE_GRADE_HAS_GRADE => false,
+        FEATURE_GRADE_HAS_GRADE => true,
         FEATURE_GRADE_OUTCOMES => false,
         FEATURE_SHOW_DESCRIPTION => true,
         FEATURE_MOD_PURPOSE => MOD_PURPOSE_COMMUNICATION,
@@ -111,6 +112,9 @@ function bigbluebuttonbn_add_instance($bigbluebuttonbn) {
 
     // Call any active subplugin so to signal a new creation.
     extension::add_instance($bigbluebuttonbn);
+
+    bigbluebuttonbn_grade_item_update($bigbluebuttonbn);
+
     return $bigbluebuttonbn->id;
 }
 
@@ -137,6 +141,8 @@ function bigbluebuttonbn_update_instance($bigbluebuttonbn) {
     }
     // Update a record.
     $DB->update_record('bigbluebuttonbn', $bigbluebuttonbn);
+
+    bigbluebuttonbn_grade_item_update($bigbluebuttonbn);
 
     // Get the meetingid column in the bigbluebuttonbn table.
     $bigbluebuttonbn->meetingid = (string) $DB->get_field('bigbluebuttonbn', 'meetingid', ['id' => $bigbluebuttonbn->id]);
@@ -756,4 +762,28 @@ function bigbluebuttonbn_course_backend_generator_create_activity(tool_generator
  */
 function bigbluebuttonbn_is_branded(): bool {
     return true;
+}
+
+/**
+ * Update/create grade item for given BigBlueButtonBN activity
+ *
+ * @category grade
+ * @param stdClass $instance A BBB instance object with extra cmidnumber
+ * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @return object grade_item
+ */
+function bigbluebuttonbn_grade_item_update(stdclass $bigbluebuttonbn, $grades=NULL) {
+    if (!function_exists('grade_update')) { //workaround for buggy PHP versions
+        require_once($CFG->libdir.'/gradelib.php');
+    }
+    $params = array('itemname' => $bigbluebuttonbn->name);
+    if ($bigbluebuttonbn->grade > 0) {
+        $params['gradetype'] = GRADE_TYPE_VALUE;
+        $params['grademax']  = $bigbluebuttonbn->grade;
+        $params['grademin']  = 0;
+
+    } else {
+        $params['gradetype'] = GRADE_TYPE_NONE;
+    }
+    return grade_update('mod/bigbluebuttonbn', $bigbluebuttonbn->course, 'mod', 'bigbluebuttonbn', $bigbluebuttonbn->id, 0, $grades, $params);
 }
