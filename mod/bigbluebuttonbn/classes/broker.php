@@ -134,23 +134,25 @@ class broker {
      */
     public static function process_meeting_events(instance $instance) {
         try {
-            // Get the HTTP headers.
-            $authorization = self::get_authorization_token();
+            // // Get the HTTP headers.
+            // $authorization = self::get_authorization_token();
 
-            // Pull the Bearer from the headers.
-            if (empty($authorization)) {
-                $msg = 'Authorization failed';
-                header('HTTP/1.0 400 Bad Request. ' . $msg);
-                return;
-            }
-            // Verify the authenticity of the request.
-            $token = \Firebase\JWT\JWT::decode(
-                $authorization[1],
-                new Key(config::get('shared_secret'), 'HS512')
-            );
+            // // Pull the Bearer from the headers.
+            // if (empty($authorization)) {
+            //     $msg = 'Authorization failed';
+            //     header('HTTP/1.0 400 Bad Request. ' . $msg);
+            //     return;
+            // }
+            // // Verify the authenticity of the request.
+            // $token = \Firebase\JWT\JWT::decode(
+            //     $authorization[1],
+            //     new Key(config::get('shared_secret'), 'HS512')
+            // );
 
-            // Get JSON string from the body.
-            $jsonstr = file_get_contents('php://input');
+            // // Get JSON string from the body.
+            // $jsonstr = file_get_contents('php://input');
+            $jsonstr = '{"version":"1.0","meeting_id":"df16c42ed7402dc36dc9b5c02bfbdfd0cde3df91-2-1[0]","internal_meeting_id":"099580a2d4ca9528ecbc4f000ba784133d8371c0-1724418788640","data":{"metadata":{"bbb_context_name":"Development 101","bbb_origin_server_common_name":"","bbb_context_id":"2","analytics_callback_url":"https://moodle-dev.jesus.blindside-ps.dev/moodle/mod/bigbluebuttonbn/bbb_broker.php?action=meeting_events&bigbluebuttonbn=1","bbb_origin":"Moodle","meeting_name":"First room","bbb_origin_server_name":"moodle-dev.jesus.blindside-ps.dev","bbb_recording_description":"","bbb_recording_tags":"","bbb_recording_name":"First room","bbb_context_label":"DEV101","bbb_context":"Development 101","is_breakout":"false","bbb_origin_version":"4.5dev+ (Build: 20240821)","bbb_origin_tag":"moodle-mod_bigbluebuttonbn (2024042200)"},"duration":10,"start":"2024-08-23T13:13:08.000+00:00","finish":"2024-08-23T13:13:18.000+00:00","attendees":[{"ext_user_id":"2","name":"Admin User","moderator":true,"joins":["2024-08-23T13:13:09.000+00:00"],"leaves":["2024-08-23T13:13:18.000+00:00"],"duration":9,"recent_talking_time":"","engagement":{"chats":0,"talks":0,"raisehand":0,"emojis":0,"poll_votes":0,"talk_time":0},"sessions":[{"joins":[{"timestamp":"2024-08-23T13:13:09.000+00:00","userid":"w_kqumfdmuxpt6","ext_userid":"2","event":"join","remove":false}],"lefts":[]}]}],"files":["default.pdf"],"polls":[]}}';
+            debugging($jsonstr, DEBUG_DEVELOPER);
 
             // Convert JSON string to a JSON object.
             $jsonobj = json_decode($jsonstr);

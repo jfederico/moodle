@@ -342,6 +342,8 @@ class report {
         $report = manager::get_report_from_id($reportid);
 
         // Ensure filter is available.
+        error_log('>>>' . print_r($report->get_filters(), true));
+        error_log('>>>' . print_r($uniqueidentifier, true));
         if (!array_key_exists($uniqueidentifier, $report->get_filters())) {
             throw new invalid_parameter_exception('Invalid filter');
         }
