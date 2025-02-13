@@ -574,16 +574,30 @@ function mod_bigbluebuttonbn_core_calendar_is_event_visible(calendar_event $even
  */
 function bigbluebuttonbn_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $nodenav) {
     global $USER;
+
+    // Get Course Module.
+    $cm = $settingsnav->get_page()->cm;
+
+    // Code for adding the recordings link.
+    $recordingsurl = new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', ['id' => $cm->id]);
+    $recordings_node = $nodenav->add(
+        get_string('recordings', 'bigbluebuttonbn'), 
+        $recordingsurl,
+        navigation_node::TYPE_SETTING,
+        null,
+        'bigbluebuttonbn_recordings'
+    );
+
     // Don't add validate completion if the callback for meetingevents is NOT enabled.
     if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
         return;
     }
     // Don't add validate completion if user is not allowed to edit the activity.
-    $context = context_module::instance($settingsnav->get_page()->cm->id);
+    $context = context_module::instance($cm->id);
     if (!has_capability('moodle/course:manageactivities', $context, $USER->id)) {
         return;
     }
-    $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
+    $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $cm->instance;
     $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
         $completionvalidate, navigation_node::TYPE_CONTAINER);
 }

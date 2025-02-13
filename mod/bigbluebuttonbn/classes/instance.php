@@ -1142,6 +1142,17 @@ EOF;
     }
 
     /**
+     * Get the URL used to view the instance as a user.
+     *
+     * @return moodle_url
+     */
+    public function get_view_recordings_url(): moodle_url {
+        return new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', [
+            'id' => $this->get_cm()->id,
+        ]);
+    }
+
+    /**
      * Get the logout URL used to log out of the meeting.
      *
      * @return moodle_url
