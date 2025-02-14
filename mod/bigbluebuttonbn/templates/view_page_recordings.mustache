@@ -45,13 +45,3 @@
 {{#recordings}}
     {{>mod_bigbluebuttonbn/recordings_session}}
 {{/recordings}}
-
-{{#js}}
-require(['mod_bigbluebuttonbn/rooms'], function(rooms) {
-    // Register action on all buttons.
-    rooms.init(
-        {{instanceid}},
-        {{pollinterval}}
-        );
-    });
-{{/js}}

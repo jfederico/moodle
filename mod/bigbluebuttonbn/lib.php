@@ -579,14 +579,13 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
     $cm = $settingsnav->get_page()->cm;
 
     // Code for adding the recordings link.
-    $recordingsurl = new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', ['id' => $cm->id]);
-    $recordings_node = $nodenav->add(
-        get_string('recordings', 'bigbluebuttonbn'), 
-        $recordingsurl,
-        navigation_node::TYPE_SETTING,
-        null,
-        'bigbluebuttonbn_recordings'
-    );
+    $nodenav->add(get_string('recordings', 'bigbluebuttonbn'),
+                new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', ['id' => $cm->id]),
+                navigation_node::TYPE_SETTING);
+
+    $nodenav->add(get_string('recordings', 'bigbluebuttonbn') . ' plain',
+                new moodle_url('/mod/bigbluebuttonbn/view_recordings_plain.php', ['id' => $cm->id]),
+                navigation_node::TYPE_SETTING);
 
     // Don't add validate completion if the callback for meetingevents is NOT enabled.
     if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {

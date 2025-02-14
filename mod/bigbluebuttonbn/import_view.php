@@ -31,8 +31,11 @@ use mod_bigbluebuttonbn\plugin;
 require(__DIR__ . '/../../config.php');
 
 $destbn = required_param('destbn', PARAM_INT);
+error_log("destbn: $destbn");
 $sourcebn = optional_param('sourcebn', -1, PARAM_INT);
+error_log("sourcebn: $sourcebn");
 $sourcecourseid = optional_param('sourcecourseid', -1, PARAM_INT);
+error_log("sourcecourseid: $sourcecourseid");
 
 $destinationinstance = instance::get_from_instanceid($destbn);
 if (!$destinationinstance) {
