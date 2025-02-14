@@ -29,6 +29,7 @@ use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\output\view_page_recordings;
+use mod_bigbluebuttonbn\output\view_page_recordings_plain;
 use mod_bigbluebuttonbn\plugin;
 
 require(__DIR__ . '/../../config.php');
@@ -59,7 +60,7 @@ require_login($course, true, $cm);
 bigbluebutton_proxy::require_working_server($instance);
 
 // Print the page header.
-$PAGE->set_url($instance->get_page_url('view_recordings'));
+$PAGE->set_url($instance->get_page_url('view_recordings_plain'));
 $PAGE->set_title($cm->name);
 $PAGE->set_cacheable(false);
 $PAGE->set_heading($course->fullname);
@@ -68,7 +69,7 @@ $PAGE->set_heading($course->fullname);
 $renderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
 
 try {
-    $renderedinfo = $renderer->render(new view_page_recordings($instance));
+    $renderedinfo = $renderer->render(new view_page_recordings_plain($instance));
 } catch (server_not_available_exception $e) {
     bigbluebutton_proxy::handle_server_not_available($instance);
 }

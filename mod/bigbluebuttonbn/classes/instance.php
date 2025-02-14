@@ -1136,21 +1136,25 @@ EOF;
      * @return moodle_url
      */
     public function get_view_url(): moodle_url {
-        return new moodle_url('/mod/bigbluebuttonbn/view.php', [
-            'id' => $this->get_cm()->id,
-        ]);
+        return $this->get_page_url();
     }
 
     /**
-     * Get the URL used to view the instance as a user.
+     * Get the URL used to view a page as a user.
      *
+     * @param null|string $page
+     * @param array $params
      * @return moodle_url
      */
-    public function get_view_recordings_url(): moodle_url {
-        return new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', [
-            'id' => $this->get_cm()->id,
-        ]);
+    public function get_page_url($page = 'view', $params = []): moodle_url {
+        if (empty($params)) {
+            $params = [
+                'id' => $this->get_cm()->id,
+            ];
+        }
+        return new moodle_url('/mod/bigbluebuttonbn/' . $page . '.php', $params);
     }
+
 
     /**
      * Get the logout URL used to log out of the meeting.
@@ -1208,9 +1212,10 @@ EOF;
      *
      * @return moodle_url
      */
-    public function get_import_url(): moodle_url {
+    public function get_import_url($originpage = 'view'): moodle_url {
         return new moodle_url('/mod/bigbluebuttonbn/import_view.php', [
             'destbn' => $this->instancedata->id,
+            'originpage' => $originpage,
         ]);
     }
 

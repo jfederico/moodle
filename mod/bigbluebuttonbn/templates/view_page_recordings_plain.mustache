@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template mod_bigbluebuttonbn/view_page
+    @template mod_bigbluebuttonbn/view_page_recordings_plain
 
     This template renders the /view.php page.
 
@@ -42,28 +42,6 @@
 }}
 {{{groupselector}}}
 
-{{#serverwarning}}
-  {{>core/notification}}
-{{/serverwarning}}
-
-{{#sitenotification}}
-  {{>core/local/notification/cta}}
-{{/sitenotification}}
-
-<h3>{{meetingname}}</h3>
-
-<h5>{{{meetingdescription}}}</h5>
-
-{{#room}}
-    {{>mod_bigbluebuttonbn/room_view}}
-{{/room}}
-
-{{#js}}
-require(['mod_bigbluebuttonbn/rooms'], function(rooms) {
-    // Register action on all buttons.
-    rooms.init(
-        {{instanceid}},
-        {{pollinterval}}
-        );
-    });
-{{/js}}
+{{#recordings}}
+    {{>mod_bigbluebuttonbn/recordings_session_plain}}
+{{/recordings}}
