@@ -21,14 +21,13 @@
  * @copyright 2025 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
- * @author    Shamiso JAravaza (shamiso.jaravaza [at] blindsidenetworks [dt] com)
+ * @author    Shamiso Jaravaza (shamiso.jaravaza [at] blindsidenetworks [dt] com)
  */
 
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
-use mod_bigbluebuttonbn\output\view_page_recordings;
 use mod_bigbluebuttonbn\output\view_page_recordings_plain;
 use mod_bigbluebuttonbn\plugin;
 

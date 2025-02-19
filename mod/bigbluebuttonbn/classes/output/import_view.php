@@ -142,7 +142,6 @@ class import_view implements renderable, templatable {
 
         // Back button.
         $destinationurl = $this->destinationinstance->get_view_url();
-        error_log("destinationurl: " . $destinationurl);
         $context->back_button = (new \single_button(
             $this->destinationinstance->get_view_url(),
             get_string('view_recording_button_return', 'mod_bigbluebuttonbn')

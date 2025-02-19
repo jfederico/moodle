@@ -21,69 +21,39 @@
 
     Example context (json):
     {
-        "bbbid" : 3,
-        "has_records": true,
-        "search_input": {}
+        "instanceid" : 3,
+        "recordings": [],
     }
 }}
 <div class="mod_bigbluebuttonbn_recordings_table_plain">
-    {{#has_recordings}}
-        <div>
-            <h4>{{title}}</h4>
-        </div>
-        <div class="mt-3">
-            {{#recordingwarnings}}
-                {{>core/notification}}
-            {{/recordingwarnings}}
-        </div>
-        <div>
-            {{#search}}
-                {{>mod_bigbluebuttonbn/search_input_recordings}}
-            {{/search}}
-            <div {{!
-                }} id="bigbluebuttonbn-recording-table-{{uniqid}}"{{!
-                }} data-bbbid="{{bbbid}}"{{!
-                }} data-tools="{{$tools}}protect,unprotect,publish,unpublish,delete{{/tools}}"{{!
-                }} data-group-id="{{groupid}}"{{!
-                }} {{$otherattributes}}{{/otherattributes}}{{!
-            }}></div>
-            <div class="container">
-                {{#recordings}}
-                <div class="row mb-3 align-items-center">
-                    <div class="col-md-1">
-                        <!-- Playback link or button -->
-                        <a href="{{playback_url}}" class="btn btn-primary">Play</a>
-                    </div>
-                    <div class="col-md-1">
-                        {{name}}
-                    </div>
-                    <div class="col-md-2">
-                        {{description}}
-                    </div>
-                    <div class="col-md-2">
-                        <!-- Preview Image -->
-                        <img src="{{preview_image_url}}" alt="Preview" class="img-fluid recording-thumbnail">
-                    </div>
-                    <div class="col-md-2">
-                        {{date}}<br>{{duration}}
-                    </div>
-                    <div class="col-md-4">
-                        <!-- Toolbar with actions like delete, edit, etc. -->
-                        <a href="{{publish_url}}" class="btn btn-success">Publish</a>
-                        <a href="{{delete_url}}" class="btn btn-danger">Delete</a>
-                        <!-- Additional actions can be added here -->
-                    </div>
-                </div>
-                {{/recordings}}
+    {{#recordingsoutput}}
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-1">
+                {{{playback}}}
+            </div>
+            <div class="col-md-1">
+                {{{recording}}}
+            </div>
+            <div class="col-md-2">
+                {{{description}}}
+            </div>
+            <div class="col-md-2">
+                {{{preview}}}
+            </div>
+            <div class="col-md-2">
+                {{{date}}}<br>{{{duration}}}
+            </div>
+            <div class="col-md-4">
+                {{{actionbar}}}
             </div>
         </div>
-    {{/has_recordings}}
-    {{^has_recordings}}
+    {{/recordingsoutput}}
+    {{^recordingsoutput}}
         <div id="bigbluebuttonbn_recordings_table">{{#str}}view_message_norecordings, mod_bigbluebuttonbn{{/str}}</div>
         <div class="mt-3">
             {{#recordingwarnings}}
                 {{>core/notification}}
             {{/recordingwarnings}}
         </div>
-    {{/has_recordings}}
+    {{/recordingsoutput}}
 </div>
