@@ -22,11 +22,25 @@
     Example context (json):
     {
         "instanceid" : 3,
-        "recordings": [],
+        "recordingsoutput": [],
     }
 }}
-<div class="mod_bigbluebuttonbn_recordings_table_plain">
+<div class="mod_bigbluebuttonbn_recordings_table_plain table table-striped">
     {{#recordingsoutput}}
+        <!-- Table Headers -->
+        {{#first}}
+        <div class="row mb-3 font-weight-bold">
+            <div class="col-md-1">Playback</div>
+            <div class="col-md-1">Name</div>
+            <div class="col-md-2">Description</div>
+            <div class="col-md-1">Preview</div>
+            <div class="col-md-2">Date</div>
+            <div class="col-md-1">Duration</div>
+            <div class="col-md-4">Toolbar</div>
+        </div>
+        {{/first}}
+
+        <!-- Table Data -->
         <div class="row mb-3 align-items-center">
             <div class="col-md-1">
                 {{{playback}}}
@@ -37,11 +51,14 @@
             <div class="col-md-2">
                 {{{description}}}
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 {{{preview}}}
             </div>
             <div class="col-md-2">
-                {{{date}}}<br>{{{duration}}}
+                {{{date}}}
+            </div>
+            <div class="col-md-1">
+                {{{duration}}}
             </div>
             <div class="col-md-4">
                 {{{actionbar}}}

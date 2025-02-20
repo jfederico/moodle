@@ -82,14 +82,27 @@ class view_page_recordings_plain implements renderable, templatable {
             $recordings = get_recordings::execute($this->instance->get_instance_id());
 
             if (!empty($recordings['tabledata']['data'])) {
-                $templatedata->recordingsoutput = json_decode($recordings['tabledata']['data'], true);
-                error_log('Recordings: ' . print_r($templatedata->recordingsoutput, true));
+                $recordingsoutput = json_decode($recordings['tabledata']['data'], true);
+
+                // Mark the first recording as first.
+                if (!empty($recordingsoutput)) {
+                    $recordingsoutput[0]['first'] = true;
+                }
+
+                // Format date before passing it to Mustache.
+                foreach ($recordingsoutput as &$recording) {
+                    if (!empty($recording['date'])) {
+                        $recording['date'] = date('F j, Y, g:i A', $recording['date'] / 1000); // Convert milliseconds to seconds.
+                    }
+                }
+
+                // Only pass the first 10 recordings
+                $templatedata->recordingsoutput = array_slice($recordingsoutput, 0, 10);
             }
         } catch (\moodle_exception $e) {
             error_log('Error fetching recordings: ' . $e->getMessage());
         }
 
-        // error_log('Template data: ' . print_r($templatedata, true));
         return $templatedata;
     }
 
