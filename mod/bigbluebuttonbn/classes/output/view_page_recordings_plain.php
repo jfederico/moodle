@@ -100,7 +100,7 @@ class view_page_recordings_plain implements renderable, templatable {
                 $templatedata->recordingsoutput = array_slice($recordingsoutput, 0, 10);
             }
         } catch (\moodle_exception $e) {
-            error_log('Error fetching recordings: ' . $e->getMessage());
+            debugging('Error fetching recordings: ' . $e->getMessage());
         }
 
         return $templatedata;
