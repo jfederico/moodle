@@ -108,8 +108,8 @@ class view_page implements renderable, templatable {
             ))->export_for_template($output);
         }
         if ($this->instance->is_feature_enabled('showrecordings') && $this->instance->is_recorded()) {
-            // $recordings = new recordings_session($this->instance);
-            // $templatedata->recordings = $recordings->export_for_template($output);
+            $recordings = new recordings_session($this->instance);
+            $templatedata->recordings = $recordings->export_for_template($output);
         } else if ($this->instance->is_type_recordings_only()) {
             $templatedata->recordingwarnings[] = (new notification(
                 get_string('view_message_recordings_disabled', 'mod_bigbluebuttonbn'),

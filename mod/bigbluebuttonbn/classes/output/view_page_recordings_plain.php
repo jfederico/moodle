@@ -60,6 +60,15 @@ class view_page_recordings_plain implements renderable, templatable {
         $templatedata = (object) [
             'instanceid' => $this->instance->get_instance_id(),
             'recordingsoutput' => [], // Initialize recordings array.
+            'headers' => [
+                'playback' => get_string('view_recording_playback', 'mod_bigbluebuttonbn'),
+                'name' => get_string('view_recording_name', 'mod_bigbluebuttonbn'),
+                'description' => get_string('view_recording_description', 'mod_bigbluebuttonbn'),
+                'preview' => get_string('view_recording_preview', 'mod_bigbluebuttonbn'),
+                'date' => get_string('view_recording_list_date', 'mod_bigbluebuttonbn'),
+                'duration' => get_string('view_recording_duration', 'mod_bigbluebuttonbn'),
+                'actionbar' => get_string('view_recording_actionbar', 'mod_bigbluebuttonbn'),
+            ]
         ];
 
         // Check if cron is running and add warnings if necessary.
