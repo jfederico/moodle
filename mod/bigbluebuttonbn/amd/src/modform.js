@@ -152,6 +152,9 @@ const applyInstanceTypeProfile = (profileType, isFeatureEnabled) => {
     // Schedule feature validation.
     showFieldset('id_schedule', showAll ||
         isFeatureEnabled(profileType, 'schedule'));
+    // Standards grading feature validation.
+    showFieldset('id_modstandardgrade', showAll ||
+        isFeatureEnabled(profileType, 'modstandardgrade'));
     // Common module settings validation.
     showFieldset('id_modstandardelshdr', showAll ||
         isFeatureEnabled(profileType, 'modstandardelshdr'));
@@ -163,6 +166,9 @@ const applyInstanceTypeProfile = (profileType, isFeatureEnabled) => {
     // Competencies validation.
     showFieldset('id_competenciessection', showAll ||
         isFeatureEnabled(profileType, 'competenciessection'));
+    // Completion validation.
+    showFieldset('id_activitycompletionheader', showAll ||
+        isFeatureEnabled(profileType, 'activitycompletionheader'));
     // Completion validation.
     showFormGroup('completionattendancegroup', showAll ||
         isFeatureEnabled(profileType, 'completionattendance'));

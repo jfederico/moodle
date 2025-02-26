@@ -26,43 +26,6 @@ import { exception as displayException, saveCancelPromise } from 'core/notificat
 import { getString } from 'core/str';
 
 /**
- * Extracts the recording ID from the action button's ID pattern.
- *
- * Example ID: `recording-publish-d6b2bf7998c4ebe9d2ccad0b09132a5d0b6b048d-1740088258056`
- *
- * @param {HTMLElement} element The clicked action button
- * @returns {string|null} The extracted recording ID or null
- */
-const extractRecordingId = (element) => {
-    const actionButton = element.closest('a.action-icon'); // Always get the <a> element
-    if (!actionButton || !actionButton.id) {
-        logMessage("Missing ID on action button.");
-        return null;
-    }
-
-    const idPattern = /^recording-[^-]+-([\w\d]+)-/; // Extracts recording ID from <a> ID
-    const match = actionButton.id.match(idPattern);
-
-    if (!match) {
-        logMessage("Failed to extract recording ID from button.");
-        return null;
-    }
-
-    logMessage("Recording ID: " + match[1]);
-    return match[1]; // Correct reference for extracted recording ID
-};
-
-/**
- * Extracts the action type dynamically from the `data-action` attribute.
- *
- * @param {HTMLElement} element The clicked action button
- * @returns {string|null} The action name (e.g., "publish", "delete") or null
- */
-const extractActionType = (element) => {
-    return element.dataset.action || null;
-};
-
-/**
  * Handles an action (e.g., delete, publish, unpublish, lock, etc.) for a recording.
  *
  * @param {HTMLElement} element The clicked action button
@@ -113,38 +76,6 @@ const requestPlainAction = async(element) => {
         } catch {
             // User cancelled the dialogue.
             return;
-        }
-    }
-
-    return repository.updateRecording(payload)
-        .then(() => refreshPlainTable())
-        .catch(displayException);
-};
-
-
-const requestPlainActionRefactored = async (element) => {
-    const action = extractActionType(element);
-    const recordingId = extractRecordingId(element);
-
-    if (!action || !recordingId) {
-        logMessage("Missing action type or recording ID.");
-        return;
-    }
-
-    const payload = {
-        recordingid: recordingId,
-        action: action,
-    };
-
-    if (element.dataset.requireConfirmation === "1") {
-        try {
-            await saveCancelPromise(
-                getString('confirm'),
-                await getRecordingConfirmationMessage(payload),
-                getString('ok', 'moodle'),
-            );
-        } catch {
-            return; // User cancelled the action.
         }
     }
 
