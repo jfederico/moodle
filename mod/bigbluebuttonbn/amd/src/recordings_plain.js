@@ -24,6 +24,7 @@
 import * as repository from './repository';
 import { exception as displayException, saveCancelPromise } from 'core/notification';
 import { getString } from 'core/str';
+import { logMessage } from './_utils';
 
 /**
  * Handles an action (e.g., delete, publish, unpublish, lock, etc.) for a recording.
@@ -165,15 +166,6 @@ const registerPlainRecordingListeners = () => {
 };
 
 registerPlainRecordingListeners();
-
-// Logging utility.
-const logMessage = (message) => {
-    if (typeof console !== "undefined" && typeof console.log === "function") {
-        /* eslint-disable no-console */
-        console.log(message);
-        /* eslint-enable no-console */
-    }
-};
 
 // Sorting functionality
 let sortOrders = { name: true, description: true, date: true }; // Track sorting state for each column

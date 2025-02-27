@@ -577,28 +577,44 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
 
     // Get Course Module.
     $cm = $settingsnav->get_page()->cm;
+    // Get the instance.
+    $instance = instance::get_from_instanceid($cm->instance);
 
-    // Code for adding the recordings link.
-    $nodenav->add(get_string('recordings', 'bigbluebuttonbn'),
-                new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', ['id' => $cm->id]),
-                navigation_node::TYPE_SETTING);
+    if (!$instance->is_type_room_only()) {
+        // Code for adding the recordings link.
+        $nodenav->add(get_string('recordings', 'bigbluebuttonbn'),
+                    new moodle_url('/mod/bigbluebuttonbn/view_recordings.php', ['id' => $cm->id]),
+                    navigation_node::TYPE_SETTING);
 
-    $nodenav->add(get_string('recordings', 'bigbluebuttonbn') . ' plain',
-                new moodle_url('/mod/bigbluebuttonbn/view_recordings_plain.php', ['id' => $cm->id]),
-                navigation_node::TYPE_SETTING);
+        $nodenav->add(get_string('recordings', 'bigbluebuttonbn') . ' plain',
+                    new moodle_url('/mod/bigbluebuttonbn/view_recordings_plain.php', ['id' => $cm->id]),
+                    navigation_node::TYPE_SETTING);
 
-    // Don't add validate completion if the callback for meetingevents is NOT enabled.
-    if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
-        return;
+        $nodenav->add(get_string('recordings', 'bigbluebuttonbn') . ' plain 2',
+                    new moodle_url('/mod/bigbluebuttonbn/view_recordings_plain2.php', ['id' => $cm->id]),
+                    navigation_node::TYPE_SETTING);
     }
-    // Don't add validate completion if user is not allowed to edit the activity.
-    $context = context_module::instance($cm->id);
-    if (!has_capability('moodle/course:manageactivities', $context, $USER->id)) {
-        return;
+
+    if (!$instance->is_type_recordings_only()) {
+        // Don't add validate completion if the callback for meetingevents is NOT enabled.
+        if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
+            return;
+        }
+        // Don't add validate completion if user is not allowed to edit the activity.
+        $context = context_module::instance($cm->id);
+        if (!has_capability('moodle/course:manageactivities', $context, $USER->id)) {
+            return;
+        }
+        $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $cm->instance;
+        $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
+            $completionvalidate, navigation_node::TYPE_CONTAINER);
+    } else {
+        // Remove the main view tab.
+        $keylist = $nodenav->get_children_key_list();
+        error_log('keylist: ' . json_encode($keylist, true));
+        $nodenav->children->remove('modulepage');
+        // $nodenav->children->remove('modedit');
     }
-    $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $cm->instance;
-    $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
-        $completionvalidate, navigation_node::TYPE_CONTAINER);
 }
 
 /**

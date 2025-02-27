@@ -1,0 +1,93 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_bigbluebuttonbn/recordings_table_plain2
+
+    This template renders the mobile page.
+
+    Example context (json):
+    {
+        "instanceid" : 3,
+        "recordingsoutput": [],
+    }
+}}
+<div class="mod_bigbluebuttonbn_recordings_table_plain2 table table-striped" data-bbbid="{{instanceid}}">
+    <div>
+        <h4>{{$title}}{{/title}}</h4>
+    </div>
+    <div class="mt-3">
+        {{#recordingwarnings}}
+            {{>core/notification}}
+        {{/recordingwarnings}}
+    </div>
+    {{#recordingsoutput}}
+        {{#first}}
+        <div class="row mb-3 font-weight-bold">
+            <div class="col-md-1">{{headers.playback}}</div>
+            <div class="col-md-1 sortable-header" data-sort="name">{{headers.name}} <span class="sort-icon">▲</span></div>
+            <div class="col-md-2 sortable-header" data-sort="description">{{headers.description}} <span class="sort-icon">▲</span></div>
+            <div class="col-md-1">{{headers.preview}}</div>
+            <div class="col-md-2 sortable-header" data-sort="date">{{headers.date}} <span class="sort-icon">▲</span></div>
+            <div class="col-md-1">{{headers.duration}}</div>
+            <div class="col-md-4">{{headers.actionbar}}</div>
+        </div>
+        {{/first}}
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-1">
+                {{{playback}}}
+            </div>
+            <div class="col-md-1" data-sort="name">
+                {{{recording}}}
+            </div>
+            <div class="col-md-2" data-sort="description">
+                {{{description}}}
+            </div>
+            <div class="col-md-1">
+                {{{preview}}}
+            </div>
+            <div class="col-md-2" data-sort="date">
+                {{{date}}}
+            </div>
+            <div class="col-md-1">
+                {{{duration}}}
+            </div>
+            <div class="col-md-4">
+                {{{actionbar}}}
+            </div>
+        </div>
+    {{/recordingsoutput}}
+    {{^recordingsoutput}}
+        <div id="bigbluebuttonbn_recordings_table">{{#str}}view_message_norecordings, mod_bigbluebuttonbn{{/str}}</div>
+        <div class="mt-3">
+            {{#recordingwarnings}}
+                {{>core/notification}}
+            {{/recordingwarnings}}
+        </div>
+    {{/recordingsoutput}}
+</div>
+
+<div id="paginationControls" class="mt-3">
+    <button id="firstPage" class="btn btn-sm btn-secondary">First</button>
+    <button id="prevPage" class="btn btn-sm btn-secondary">Previous</button>
+    <select id="pageSelect" class="form-control d-inline-block w-auto"></select>
+    <button id="nextPage" class="btn btn-sm btn-secondary">Next</button>
+    <button id="lastPage" class="btn btn-sm btn-secondary">Last</button>
+</div>    
+
+{{#js}}
+    require(['mod_bigbluebuttonbn/recordings_plain2']);
+{{/js}}
