@@ -144,27 +144,102 @@ const refreshPlainTable = () => {
     window.location.reload(); // Refresh page to update the table
 };
 
-/**
- * Registers event listeners for recording actions in the plain HTML table.
- */
 const registerPlainRecordingListeners = () => {
     document.addEventListener('click', (e) => {
-        logMessage("DEBUG.");
+        logMessage("registerPlainRecordingListeners.");
         const actionButton = e.target.closest('.action-icon');
         if (actionButton) {
             e.preventDefault();
             requestPlainAction(actionButton);
+            return;
+        }
+
+        // Detect sortable column click
+        const sortableHeader = e.target.closest(".sortable-header");
+        if (sortableHeader) {
+            const column = sortableHeader.dataset.sort;
+            e.preventDefault();
+            sortTable(column);
         }
     });
 };
 
-// Initialize event listeners when the script is loaded
 registerPlainRecordingListeners();
 
+// Logging utility.
 const logMessage = (message) => {
     if (typeof console !== "undefined" && typeof console.log === "function") {
         /* eslint-disable no-console */
         console.log(message);
         /* eslint-enable no-console */
+    }
+};
+
+// Sorting functionality
+let sortOrders = { name: true, description: true, date: true }; // Track sorting state for each column
+
+const sortTable = (column) => {
+    const tableContainer = document.querySelector(".mod_bigbluebuttonbn_recordings_table_plain");
+
+    if (!tableContainer) {
+        return;
+    }
+
+    const rows = Array.from(tableContainer.querySelectorAll(".row.mb-3.align-items-center"));
+
+    rows.sort((rowA, rowB) => {
+        let valueA, valueB;
+
+        if (column === "date") {
+            const dateAElement = rowA.querySelector(".col-md-2[data-sort='date']");
+            const dateBElement = rowB.querySelector(".col-md-2[data-sort='date']");
+
+            if (!dateAElement || !dateBElement) {
+                return 0;
+            }
+
+            const dateA = parseDate(dateAElement.textContent.trim());
+            const dateB = parseDate(dateBElement.textContent.trim());
+
+            return sortOrders[column] ? dateA - dateB : dateB - dateA;
+        } else {
+            const columnSelector = `.col-md-${column === "name" ? 1 : 2}[data-sort='${column}']`;
+            const elementA = rowA.querySelector(columnSelector);
+            const elementB = rowB.querySelector(columnSelector);
+
+            if (!elementA || !elementB) {
+                return 0;
+            }
+
+            valueA = elementA.textContent.trim().toLowerCase();
+            valueB = elementB.textContent.trim().toLowerCase();
+
+            return sortOrders[column] ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+        }
+    });
+
+    rows.forEach(row => {
+        tableContainer.appendChild(row);
+    });
+
+    sortOrders[column] = !sortOrders[column];
+
+    updateSortIcons(column);
+};
+
+const parseDate = (dateString) => {
+    const parsedDate = Date.parse(dateString);
+    return isNaN(parsedDate) ? 0 : parsedDate; // Convert to timestamp for comparison
+};
+
+const updateSortIcons = (activeColumn) => {
+    document.querySelectorAll(".sortable-header .sort-icon").forEach(icon => {
+        icon.textContent = "▲"; // Reset all icons to default ascending
+    });
+
+    const activeHeader = document.querySelector(`.sortable-header[data-sort="${activeColumn}"] .sort-icon`);
+
+    if (activeHeader) {
+        activeHeader.textContent = sortOrders[activeColumn] ? "▲" : "▼";
     }
 };

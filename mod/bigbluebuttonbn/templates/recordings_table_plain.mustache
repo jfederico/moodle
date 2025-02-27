@@ -35,34 +35,31 @@
             {{/recordingwarnings}}
         </div>
     {{#recordingsoutput}}
-        <!-- Table Headers -->
         {{#first}}
         <div class="row mb-3 font-weight-bold">
             <div class="col-md-1">{{headers.playback}}</div>
-            <div class="col-md-1">{{headers.name}}</div>
-            <div class="col-md-2">{{headers.description}}</div>
+            <div class="col-md-1 sortable-header" data-sort="name">{{headers.name}} <span class="sort-icon">▲</span></div>
+            <div class="col-md-2 sortable-header" data-sort="description">{{headers.description}} <span class="sort-icon">▲</span></div>
             <div class="col-md-1">{{headers.preview}}</div>
-            <div class="col-md-2">{{headers.date}}</div>
+            <div class="col-md-2 sortable-header" data-sort="date">{{headers.date}} <span class="sort-icon">▲</span></div>
             <div class="col-md-1">{{headers.duration}}</div>
             <div class="col-md-4">{{headers.actionbar}}</div>
         </div>
         {{/first}}
-
-        <!-- Table Data -->
         <div class="row mb-3 align-items-center">
             <div class="col-md-1">
                 {{{playback}}}
             </div>
-            <div class="col-md-1">
+            <div class="col-md-1" data-sort="name">
                 {{{recording}}}
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2" data-sort="description">
                 {{{description}}}
             </div>
             <div class="col-md-1">
                 {{{preview}}}
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2" data-sort="date">
                 {{{date}}}
             </div>
             <div class="col-md-1">
