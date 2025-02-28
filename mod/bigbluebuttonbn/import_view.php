@@ -33,6 +33,7 @@ require(__DIR__ . '/../../config.php');
 $destbn = required_param('destbn', PARAM_INT);
 $sourcebn = optional_param('sourcebn', -1, PARAM_INT);
 $sourcecourseid = optional_param('sourcecourseid', -1, PARAM_INT);
+$originpage = optional_param('originpage', '', PARAM_TEXT);
 
 $destinationinstance = instance::get_from_instanceid($destbn);
 if (!$destinationinstance) {
@@ -49,7 +50,7 @@ if (!(boolean) \mod_bigbluebuttonbn\local\config::importrecordings_enabled()) {
         get_string('view_message_importrecordings_disabled', plugin::COMPONENT),
         notification::ERROR
     );
-    redirect($destinationinstance->get_view_url());
+    redirect($destinationinstance->get_page_url($originpage));
 }
 
 // Print the page header.
@@ -62,5 +63,5 @@ $PAGE->set_heading($course->fullname);
 $renderer = $PAGE->get_renderer(plugin::COMPONENT);
 
 echo $OUTPUT->header();
-echo $renderer->render(new import_view($destinationinstance, $sourcecourseid, $sourcebn));
+echo $renderer->render(new import_view($destinationinstance, $sourcecourseid, $sourcebn, $originpage));
 echo $OUTPUT->footer();

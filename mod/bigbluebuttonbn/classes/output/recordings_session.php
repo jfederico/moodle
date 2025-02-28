@@ -65,8 +65,12 @@ class recordings_session implements renderable, templatable {
         ];
 
         if ($this->instance->can_import_recordings()) {
+            global $PAGE;
+            $urlpath = parse_url($PAGE->url->out_as_local_url(false), PHP_URL_PATH);
+            $pagename = preg_replace('/\.php.*/', '', basename($urlpath));
+
             $button = new \single_button(
-                $this->instance->get_import_url(),
+                $this->instance->get_import_url($pagename),
                 get_string('view_recording_button_import', 'mod_bigbluebuttonbn')
             );
             $context->import_button = $button->export_for_template($output);
