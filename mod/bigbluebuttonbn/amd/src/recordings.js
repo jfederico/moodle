@@ -26,7 +26,6 @@ import { exception as displayException, saveCancelPromise } from 'core/notificat
 import { getString } from 'core/str';
 import { sortTable } from './recordings_sorting';
 import { setupPagination } from './recordings_pagination';
-import { logMessage } from './recordings_utils';
 
 /**
  * Handles an action (e.g., delete, publish, unpublish, lock, etc.) for a recording.
@@ -47,8 +46,6 @@ const requestPlainAction = async (element) => {
         additionaloptions: getDataFromAction(element, 'additionaloptions'),
         action: elementData.action,
     };
-
-    logMessage(`Processing action: ${payload.action} for recording ${payload.recordingid}`);
 
     if (!payload.additionaloptions) {
         payload.additionaloptions = {};
@@ -83,8 +80,6 @@ const requestPlainAction = async (element) => {
  * @returns {Promise<string>}
  */
 const getRecordingConfirmationMessage = async (data) => {
-    logMessage(`Fetching confirmation message for ${data.action}`);
-
     const playbackElement = document.querySelector(`#playbacks-${data.recordingid}`);
     if (!playbackElement) {
         return getString(`view_recording_${data.action}_confirmation`, 'bigbluebuttonbn');
@@ -125,7 +120,6 @@ const getRecordingConfirmationMessage = async (data) => {
  * Refreshes the plain recordings table by reloading the page.
  */
 const refreshPlainTable = () => {
-    logMessage("Refreshing recordings table...");
     window.location.reload();
 };
 
@@ -134,7 +128,6 @@ const refreshPlainTable = () => {
  */
 const setupTableInteractions = () => {
     document.addEventListener('click', (e) => {
-        logMessage("Handling table interactions...");
         const actionButton = e.target.closest('.action-icon');
         if (actionButton) {
             e.preventDefault();
