@@ -49,16 +49,23 @@ class import_view implements renderable, templatable {
     protected $sourcecourseid;
 
     /**
+     * @var string $originpage the origin page.
+     */
+    protected $originpage;
+
+    /**
      * import_view constructor.
      *
      * @param instance $destinationinstance
      * @param int $sourcecourseid
      * @param int $sourceinstanceid
+     * @param string $originpage
      */
-    public function __construct(instance $destinationinstance, int $sourcecourseid, int $sourceinstanceid) {
+    public function __construct(instance $destinationinstance, int $sourcecourseid, int $sourceinstanceid, string $originpage = 'view') {
         $this->destinationinstance = $destinationinstance;
         $this->sourcecourseid = $sourcecourseid >= 0 ? $sourcecourseid : null;
         $this->sourceinstanceid = $sourceinstanceid >= 0 ? $sourceinstanceid : null;
+        $this->originpage = $originpage;
     }
 
     /**
@@ -139,8 +146,9 @@ class import_view implements renderable, templatable {
         }
 
         // Back button.
+        $destinationurl = $this->destinationinstance->get_page_url($this->originpage);
         $context->back_button = (new \single_button(
-            $this->destinationinstance->get_view_url(),
+            $destinationurl,
             get_string('view_recording_button_return', 'mod_bigbluebuttonbn')
         ))->export_for_template($output);
 
