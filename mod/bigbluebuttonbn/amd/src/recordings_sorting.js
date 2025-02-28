@@ -21,8 +21,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import { logMessage } from './recordings_utils';
-
 /**
  * Stores sorting order state for each column.
  * @type {Object}
@@ -35,11 +33,8 @@ const sortOrders = { name: true, description: true, date: true };
  * @param {string} column - The column to sort by.
  */
 export const sortTable = (column) => {
-    logMessage(`Sorting by ${column}`);
-
     const tableContainer = document.querySelector(".mod_bigbluebuttonbn_recordings_table");
     if (!tableContainer) {
-        logMessage("Table container not found.");
         return;
     }
 

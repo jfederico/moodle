@@ -21,17 +21,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import { logMessage } from './recordings_utils';
+import {getString} from 'core/str';
 
 /**
  * Initializes pagination functionality for the recordings table.
  */
 export const setupPagination = () => {
-    logMessage("Initializing pagination...");
-
     const tableContainer = document.querySelector(".mod_bigbluebuttonbn_recordings_table");
     if (!tableContainer) {
-        logMessage("Table container not found!");
         return;
     }
 
@@ -45,7 +42,6 @@ export const setupPagination = () => {
     const pageSelect = document.getElementById("pageSelect");
 
     if (!firstPageBtn || !prevPageBtn || !nextPageBtn || !lastPageBtn || !pageSelect) {
-        logMessage("Pagination buttons not found!");
         return;
     }
 
@@ -70,12 +66,20 @@ export const setupPagination = () => {
     /**
      * Updates pagination buttons and dropdown.
      */
-    function updatePaginationControls() {
+    async function updatePaginationControls() {
         pageSelect.innerHTML = "";
+
+        let pageString;
+        try {
+            pageString = await getString('view_recording_yui_page', 'bigbluebuttonbn');
+        } catch (error) {
+            pageString = "Page";
+        }
+
         for (let i = 1; i <= totalPages; i++) {
             let option = document.createElement("option");
             option.value = i;
-            option.textContent = `Page ${i}`;
+            option.textContent = `${pageString} ${i}`;
             if (i === currentPage) {
                 option.selected = true;
             }
@@ -88,12 +92,18 @@ export const setupPagination = () => {
         lastPageBtn.disabled = (currentPage === totalPages);
     }
 
+    /**
+     * Event listeners for first page in pagination controls.
+     */
     firstPageBtn.addEventListener("click", () => {
         currentPage = 1;
         renderTable(currentPage);
         updatePaginationControls();
     });
 
+    /**
+     * Event listeners for previous page in pagination controls.
+     */
     prevPageBtn.addEventListener("click", () => {
         if (currentPage > 1) {
             currentPage--;
@@ -102,6 +112,9 @@ export const setupPagination = () => {
         }
     });
 
+    /**
+     * Event listeners for next page in pagination controls.
+     */
     nextPageBtn.addEventListener("click", () => {
         if (currentPage < totalPages) {
             currentPage++;
@@ -110,12 +123,18 @@ export const setupPagination = () => {
         }
     });
 
+    /**
+     * Event listeners for last page in pagination controls.
+     */
     lastPageBtn.addEventListener("click", () => {
         currentPage = totalPages;
         renderTable(currentPage);
         updatePaginationControls();
     });
 
+    /**
+     * Event listeners for page selection dropdown.
+     */
     pageSelect.addEventListener("change", (e) => {
         currentPage = parseInt(e.target.value, 10);
         renderTable(currentPage);
