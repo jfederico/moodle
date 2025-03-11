@@ -89,6 +89,30 @@ class extension {
     }
 
     /**
+     * Return plugin list sorted according to order from admin extension manager.
+     * @return array The sorted list of plugins
+     */
+    public static function get_sorted_plugins_list(): array {
+        // Get all subplugins of bigbluebuttonbn.
+        $extensionnames = \core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME);
+
+        // Sort the plugins according to the sortorder.
+        $result = [];
+        foreach ($extensionnames as $name => $path) {
+            $idx = get_config(self::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'sortorder');
+            if (!$idx) {
+                $idx = 0;
+            }
+            while (array_key_exists($idx, $result)) {
+                $idx += 1;
+            }
+            $result[$idx] = $name;
+        }
+        ksort($result);
+        return $result;
+    }
+
+    /**
      * Get classes are named on the base of this classname and implementing this class
      *
      * @param string $classname
@@ -228,5 +252,28 @@ class extension {
      */
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
+    }
+
+    /**
+     * Handle plugin-specific overrides for a given function.
+     *
+     * @param string $basefunctionname The base function name (without plugin prefix).
+     * @param mixed ...$args A variable number of arguments to pass to the override function.
+     * @return bool Returns true if an override was found and executed, false otherwise.
+     */
+    public static function handle_overrides(string $basefunctionname, ...$args): bool {
+        // Get all subplugins of bigbluebuttonbn.
+        $sortedextensionnames = self::get_sorted_plugins_list();
+
+        // Loop through subplugins and execute override functions in order.
+        foreach ($sortedextensionnames as $index => $name) {
+            $functionname = $name . '_override_' . $basefunctionname;
+            if (function_exists($functionname)) {
+                $functionname(...$args);
+                return true; // Override found and executed.
+            }
+        }
+
+        return false; // No override found.
     }
 }
