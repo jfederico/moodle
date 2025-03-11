@@ -39,6 +39,10 @@ class extension {
      */
     const BBB_EXTENSION_PLUGIN_NAME = 'bbbext';
 
+    // Constants for including or excluding disabled plugins.
+    public const INCLUDE_DISABLED_PLUGINS = true;
+    public const EXCLUDE_DISABLED_PLUGINS = false;
+
     /**
      * Invoke a subplugin hook that will return additional parameters
      *
@@ -86,6 +90,43 @@ class extension {
             // If $newparameters is null, the constructor will be called without parameters.
             return new $targetclassname(...$newparameters);
         }, $classes);
+    }
+
+    /**
+     * Return plugin list sorted according to order from admin extension manager.
+     *
+     * @param bool $includedisabled Whether to include disabled plugins (default: false).
+     * @return array The sorted list of plugins
+     *
+     */
+    public static function get_sorted_plugins_list(bool $includedisabled = self::INCLUDE_DISABLED_PLUGINS): array {
+        // Get all subplugins of bigbluebuttonbn.
+        $extensionnames = \core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME);
+
+        // Sort the plugins according to the sortorder.
+        $result = [];
+
+        foreach ($extensionnames as $name => $path) {
+            // Check if the plugin is disabled.
+            $isdisabled = get_config(self::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'disabled');
+            if (!$includedisabled && $isdisabled) {
+                continue; // Skip disabled plugins unless explicitly included.
+            }
+            // Determine sort order.
+            $idx = get_config(self::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'sortorder');
+            if (!$idx) {
+                $idx = 0;
+            }
+            // Ensure unique index.
+            while (array_key_exists($idx, $result)) {
+                $idx += 1;
+            }
+            $result[$idx] = $name;
+        }
+
+        // Sort by index and return the sorted list.
+        ksort($result);
+        return $result;
     }
 
     /**
@@ -228,5 +269,48 @@ class extension {
      */
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
+    }
+
+    /**
+     * Handle plugin-specific overrides for a given function.
+     *
+     * @param string $basefunctionname The base function name (without plugin prefix).
+     * @param mixed ...$args A variable number of arguments to pass to the override function.
+     * @return bool Returns true if an override was found and executed, false otherwise.
+     */
+    public static function handle_overrides(string $basefunctionname, ...$args): bool {
+        // Get all subplugins of bigbluebuttonbn.
+        $sortedextensionnames = self::get_sorted_plugins_list(self::EXCLUDE_DISABLED_PLUGINS);
+
+        // Loop through subplugins and execute override functions in order.
+        foreach ($sortedextensionnames as $index => $name) {
+            $functionname = $name . '_override_' . $basefunctionname;
+            if (function_exists($functionname)) {
+                $functionname(...$args);
+                return true; // Override found and executed.
+            }
+        }
+
+        return false; // No override found.
+    }
+
+    /**
+     * Handle plugin-specific appends for a given function.
+     *
+     * @param string $basefunctionname The base function name (without plugin prefix).
+     * @param mixed ...$args A variable number of arguments to pass to the override function.
+     *
+     */
+    public static function handle_appends(string $basefunctionname, ...$args) {
+        // Get all subplugins of bigbluebuttonbn.
+        $sortedextensionnames = self::get_sorted_plugins_list(self::EXCLUDE_DISABLED_PLUGINS);
+
+        // Loop through subplugins and execute override functions in order.
+        foreach ($sortedextensionnames as $index => $name) {
+            $functionname = $name . '_append_' . $basefunctionname;
+            if (function_exists($functionname)) {
+                call_user_func_array($functionname, $args);
+            }
+        }
     }
 }
