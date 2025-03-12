@@ -43,6 +43,14 @@ use mod_bigbluebuttonbn\local\config;
 
 global $CFG;
 
+// Automatically load lib.php from all extensions inside "extensions/".
+$extensiondir = __DIR__ . '/extension/';
+if (is_dir($extensiondir)) {
+    foreach (glob($extensiondir . '*/lib.php') as $extensionlib) {
+        require_once($extensionlib);
+    }
+}
+
 /**
  * Indicates API features that the bigbluebuttonbn supports.
  *
@@ -573,6 +581,12 @@ function mod_bigbluebuttonbn_core_calendar_is_event_visible(calendar_event $even
  * @param navigation_node $nodenav The node to add module settings to
  */
 function bigbluebuttonbn_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $nodenav) {
+    // Check if an override exists and execute it.
+    if (extension::handle_overrides('extend_settings_navigation', $settingsnav, $nodenav)) {
+        return; // An override was found and executed, so stop here.
+    }
+
+    // Default behavior.
     global $USER;
     // Don't add validate completion if the callback for meetingevents is NOT enabled.
     if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
@@ -583,9 +597,13 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
     if (!has_capability('moodle/course:manageactivities', $context, $USER->id)) {
         return;
     }
+    // Default navigation addition.
     $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
     $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
         $completionvalidate, navigation_node::TYPE_CONTAINER);
+
+    // Allow extensions to append additional behavior.
+    extension::handle_appends('extend_settings_navigation', $settingsnav, $nodenav);
 }
 
 /**
