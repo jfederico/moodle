@@ -89,6 +89,27 @@ class extension {
     }
 
     /**
+     * Return plugin list sorted according to order from admin extension manager.
+     * @param array $names Array of plugin names
+     * @return array The sorted list of plugins
+     */
+    public static function get_sorted_plugins_list(array $names): array {
+        $result = [];
+        foreach ($names as $name => $path) {
+            $idx = get_config(self::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'sortorder');
+            if (!$idx) {
+                $idx = 0;
+            }
+            while (array_key_exists($idx, $result)) {
+                $idx += 1;
+            }
+            $result[$idx] = $name;
+        }
+        ksort($result);
+        return $result;
+    }
+
+    /**
      * Get classes are named on the base of this classname and implementing this class
      *
      * @param string $classname
@@ -258,5 +279,64 @@ class extension {
      */
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
+    }
+
+    /**
+     * Handle plugin-specific function calls (overrides or appends).
+     *
+     * @param string $basefunctionname The base function name (without plugin prefix).
+     * @param string $prefix The prefix to determine function naming ('override' or 'append').
+     * @param bool $returnonfirst Whether to return immediately after the first successful execution.
+     * @param mixed ...$args A variable number of arguments to pass to the override function.
+     * @return bool Returns true if at least one function was executed, false otherwise.
+     */
+    public static function handle_plugin_functions(string $basefunctionname, string $prefix, bool $returnonfirst, ...$args): bool {
+        // Get all subplugins of bigbluebuttonbn.
+        $extensionnames = \core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME);
+        $sortedextensionnames = self::get_sorted_plugins_list($extensionnames);
+
+        $executed = false;
+
+        // Loop through subplugins and execute functions in order.
+        foreach ($sortedextensionnames as $name) {
+            // Check if the plugin is disabled.
+            $isdisabled = get_config(self::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'disabled');
+            if ($isdisabled) {
+                continue; // Skip disabled plugins unless explicitly included.
+            }
+
+            $functionname = $name . '_' . $prefix . '_' . $basefunctionname;
+            if (function_exists($functionname)) {
+                call_user_func_array($functionname, $args);
+                $executed = true;
+
+                if ($returnonfirst) {
+                    return true; // Stop execution early for overrides.
+                }
+            }
+        }
+
+        return $executed;
+    }
+
+    /**
+     * Handle plugin-specific overrides for a given function.
+     *
+     * @param string $basefunctionname The base function name (without plugin prefix).
+     * @param mixed ...$args A variable number of arguments to pass to the override function.
+     * @return bool Returns true if an override was found and executed, false otherwise.
+     */
+    public static function handle_overrides(string $basefunctionname, ...$args): bool {
+        return self::handle_plugin_functions($basefunctionname, 'override', true, ...$args);
+    }
+
+    /**
+     * Handle plugin-specific appends for a given function.
+     *
+     * @param string $basefunctionname The base function name (without plugin prefix).
+     * @param mixed ...$args A variable number of arguments to pass to the append function.
+     */
+    public static function handle_appends(string $basefunctionname, ...$args) {
+        self::handle_plugin_functions($basefunctionname, 'append', false, ...$args);
     }
 }
