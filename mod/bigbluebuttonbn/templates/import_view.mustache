@@ -54,7 +54,7 @@
         </div>
     </div>
     {{#has_selected_course}}
-        {{< mod_bigbluebuttonbn/recordings_table}}
+        {{< mod_bigbluebuttonbn/recordingsyui_table}}
             {{$title}}{{#str}} view_recording_button_import, mod_bigbluebuttonbn {{/str}}{{/title}}
             {{$tools}}import{{/tools}}
             {{$removeimportedid}}{{bbboriginid}}{{/removeimportedid}}
@@ -64,7 +64,7 @@
             }} data-bbb-source-course-id="{{sourcecourseid}}" {{!
             }} data-bbb-source-instance-id="{{bbbsourceid}}" {{!
             }} {{/otherattributes}}
-        {{/mod_bigbluebuttonbn/recordings_table}}
+        {{/mod_bigbluebuttonbn/recordingsyui_table}}
     {{/has_selected_course}}
     {{^has_selected_course}}
         <span class="text-warning">{{#str}} view_recording_select_course, mod_bigbluebuttonbn {{/str}}</span>
