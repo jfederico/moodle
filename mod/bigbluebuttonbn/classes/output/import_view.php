@@ -104,6 +104,12 @@ class import_view implements renderable, templatable {
             $context->bbbsourceid = $sourceinstance->get_instance_id();
         }
 
+        $actionurl = $this->destinationinstance->get_page_url('import_view', [
+            'destbn' => $this->destinationinstance->get_instance_id(),
+            'originpage' => $this->originpage,
+            'originparams' => http_build_query($this->originparams),
+        ]);
+
         // Now the selects.
         if (!empty($this->sourcecourseid)) {
             $selectrecords = [];
@@ -126,7 +132,6 @@ class import_view implements renderable, templatable {
                 $selectrecords[0] =
                     get_string('recordings_from_deleted_activities', 'mod_bigbluebuttonbn');
             }
-            $actionurl = $this->destinationinstance->get_import_url();
             $actionurl->param('sourcecourseid', $this->sourcecourseid);
 
             $select = new \single_select(
@@ -141,7 +146,7 @@ class import_view implements renderable, templatable {
 
         // Course selector.
         $context->course_select = (new \single_select(
-            $this->destinationinstance->get_import_url(),
+            $actionurl,
             'sourcecourseid',
             $courses,
             $this->sourcecourseid ?? ""
