@@ -34,6 +34,7 @@ $destbn = required_param('destbn', PARAM_INT);
 $sourcebn = optional_param('sourcebn', -1, PARAM_INT);
 $sourcecourseid = optional_param('sourcecourseid', -1, PARAM_INT);
 $originpage = optional_param('originpage', '', PARAM_TEXT);
+parse_str(optional_param('originparams', '', PARAM_TEXT), $originparams);
 
 $destinationinstance = instance::get_from_instanceid($destbn);
 if (!$destinationinstance) {
@@ -45,16 +46,22 @@ $course = $destinationinstance->get_course();
 
 require_login($course, true, $cm);
 
+$destinationurl = $destinationinstance->get_page_url('import_view', [
+    'destbn' => $destinationinstance->get_instance_id(),
+    'originpage' => $originpage,
+    'originparams' => http_build_query($originparams),
+]);
+
 if (!(boolean) \mod_bigbluebuttonbn\local\config::importrecordings_enabled()) {
     notification::add(
         get_string('view_message_importrecordings_disabled', plugin::COMPONENT),
         notification::ERROR
     );
-    redirect($destinationinstance->get_page_url($originpage));
+    redirect($destinationurl);
 }
 
 // Print the page header.
-$PAGE->set_url($destinationinstance->get_import_url());
+$PAGE->set_url($destinationurl);
 $PAGE->set_title($destinationinstance->get_meeting_name());
 $PAGE->set_cacheable(false);
 $PAGE->set_heading($course->fullname);
@@ -63,5 +70,5 @@ $PAGE->set_heading($course->fullname);
 $renderer = $PAGE->get_renderer(plugin::COMPONENT);
 
 echo $OUTPUT->header();
-echo $renderer->render(new import_view($destinationinstance, $sourcecourseid, $sourcebn, $originpage));
+echo $renderer->render(new import_view($destinationinstance, $sourcecourseid, $sourcebn, $originpage, $originparams));
 echo $OUTPUT->footer();

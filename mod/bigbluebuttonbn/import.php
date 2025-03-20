@@ -37,6 +37,7 @@ $destbn = required_param('destbn', PARAM_INT);
 $sourcebn = optional_param('sourcebn', -1, PARAM_INT);
 $sourcecourseid = optional_param('sourcecourseid', -1, PARAM_INT);
 $originpage = optional_param('originpage', '', PARAM_TEXT);
+parse_str(optional_param('originparams', '', PARAM_TEXT), $originparams);
 
 $destinationinstance = instance::get_from_instanceid($destbn);
 if (!$destinationinstance) {
@@ -48,23 +49,25 @@ $course = $destinationinstance->get_course();
 
 require_login($course, true, $cm);
 
+$originurl = $destinationinstance->get_page_url('import_view', [
+    'destbn' => $destinationinstance->get_instance_id(),
+    'originpage' => $originpage,
+    'originparams' => http_build_query($originparams),
+]);
+
 if (!(boolean) \mod_bigbluebuttonbn\local\config::importrecordings_enabled()) {
     notification::add(
         get_string('view_message_importrecordings_disabled', plugin::COMPONENT),
         notification::ERROR
     );
-    redirect($destinationinstance->get_page_url($originpage));
+    redirect($originurl);
 }
 
 // Ensure `$sourceinstanceid` is always an integer.
 $sourceinstanceid = is_numeric($sourcebn) ? (int) $sourcebn : -1;
 
 // Print the page header.
-$pageurl = $destinationinstance->get_page_url('import', [
-    'destbn' => $destinationinstance->get_instance_id(),
-    'originpage' => $originpage,
-]);
-$PAGE->set_url($pageurl);
+$PAGE->set_url($originurl);
 $PAGE->set_title($destinationinstance->get_meeting_name());
 $PAGE->set_cacheable(false);
 $PAGE->set_heading($course->fullname);
@@ -74,7 +77,7 @@ $PAGE->set_heading($course->fullname);
 $renderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
 
 try {
-    $renderedinfo = $renderer->render(new import($destinationinstance, $sourcecourseid, $sourceinstanceid, $originpage));
+    $renderedinfo = $renderer->render(new import($destinationinstance, $sourcecourseid, $sourceinstanceid, $originpage, $originparams));
 } catch (server_not_available_exception $e) {
     bigbluebutton_proxy::handle_server_not_available($instance);
 }

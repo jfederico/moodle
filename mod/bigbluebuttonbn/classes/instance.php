@@ -1206,10 +1206,11 @@ EOF;
      *
      * @return moodle_url
      */
-    public function get_import_url($originpage = 'view'): moodle_url {
+    public function get_import_url($originpage = 'view', $originparams = []): moodle_url {
         return $this->get_page_url('import_view', [
             'destbn' => $this->get_instance_id(),
             'originpage' => $originpage,
+            'originparams' => http_build_query($originparams),
         ]);
     }
 
