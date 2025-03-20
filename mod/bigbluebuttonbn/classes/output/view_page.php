@@ -149,6 +149,7 @@ class view_page implements renderable, templatable {
             ))->export_for_template($output);
         }
 
+        error_log("templatedata: " . json_encode($templatedata, true));
         return $templatedata;
     }
 
