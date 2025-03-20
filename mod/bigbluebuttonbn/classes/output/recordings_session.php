@@ -68,19 +68,24 @@ class recordings_session implements renderable, templatable {
             global $PAGE;
             $urlpath = parse_url($PAGE->url->out_as_local_url(false), PHP_URL_PATH);
             $pagename = preg_replace('/\.php.*/', '', basename($urlpath));
-            $pageurl = $this->instance->get_page_url('import', [
+            $pageparams = ['id' => $this->instance->get_cm()->id];
+            $button = new \single_button(
+                $this->instance->get_page_url('import', [
                     'destbn' => $this->instance->get_instance_id(),
                     'originpage' => $pagename,
-                ]);
-            $button = new \single_button(
-                $pageurl,
+                    'originparams' => http_build_query($pageparams),
+                ]),
                 get_string('view_recording_button_import', 'mod_bigbluebuttonbn')
             );
             $context->import_button = $button->export_for_template($output);
 
             // TODO: Remove these after completion of the new import view.
             $buttonalt = new \single_button(
-                $this->instance->get_import_url(),
+                $this->instance->get_page_url('import_view', [
+                    'destbn' => $this->instance->get_instance_id(),
+                    'originpage' => $pagename,
+                    'originparams' => http_build_query($pageparams),
+                ]),
                 get_string('view_recording_button_import', 'mod_bigbluebuttonbn') . ' (alt)'
             );
             $context->import_buttonalt = $buttonalt->export_for_template($output);

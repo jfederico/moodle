@@ -55,6 +55,11 @@ class import implements renderable, templatable {
     protected $originpage;
 
     /**
+     * @var string $originparams the origin params.
+     */
+    protected array $originparams;
+
+    /**
      * import constructor.
      *
      * @param instance $destinationinstance
@@ -62,11 +67,12 @@ class import implements renderable, templatable {
      * @param int $sourceinstanceid
      * @param string $originpage
      */
-    public function __construct(instance $destinationinstance, int $sourcecourseid, int $sourceinstanceid, string $originpage = 'view') {
+    public function __construct(instance $destinationinstance, int $sourcecourseid, int $sourceinstanceid, string $originpage = 'view', array $originparams = []) {
         $this->destinationinstance = $destinationinstance;
         $this->sourcecourseid = $sourcecourseid >= 0 ? $sourcecourseid : null;
         $this->sourceinstanceid = $sourceinstanceid >= 0 ? (int) $sourceinstanceid : 0;
         $this->originpage = $originpage;
+        $this->originparams = $originparams;
     }
 
     /**
@@ -103,6 +109,7 @@ class import implements renderable, templatable {
         $actionurl = $this->destinationinstance->get_page_url('import', [
                 'destbn' => $this->destinationinstance->get_instance_id(),
                 'originpage' => $this->originpage,
+                'originparams' => http_build_query($this->originparams),
             ]);
 
         // Now the selects.
@@ -152,7 +159,6 @@ class import implements renderable, templatable {
         }
 
         if (!empty($this->sourcecourseid) && !empty($this->sourceinstanceid)) {
-
             try {
                 $destinationinstanceid = $this->destinationinstance->get_instance_id();
                 $sourcebigbluebuttonbnid = $this->sourceinstanceid;
@@ -196,13 +202,12 @@ class import implements renderable, templatable {
         }
         
         // Back button.
-        $destinationurl = $this->destinationinstance->get_page_url($this->originpage);
+        $destinationurl = $this->destinationinstance->get_page_url($this->originpage, $this->originparams);
         $context->back_button = (new \single_button(
             $destinationurl,
             get_string('view_recording_button_return', 'mod_bigbluebuttonbn')
         ))->export_for_template($output);
 
-        error_log("context: " . json_encode($context, true));
         return $context;
     }
 }
