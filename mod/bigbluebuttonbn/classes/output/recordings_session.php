@@ -77,6 +77,13 @@ class recordings_session implements renderable, templatable {
                 get_string('view_recording_button_import', 'mod_bigbluebuttonbn')
             );
             $context->import_button = $button->export_for_template($output);
+
+            // TODO: Remove these after completion of the new import view.
+            $buttonalt = new \single_button(
+                $this->instance->get_import_url(),
+                get_string('view_recording_button_import', 'mod_bigbluebuttonbn') . ' (alt)'
+            );
+            $context->import_buttonalt = $buttonalt->export_for_template($output);
         }
 
         return $context;
