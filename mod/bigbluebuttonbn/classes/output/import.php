@@ -87,23 +87,27 @@ class import implements renderable, templatable {
             $courses[0] = get_string('recordings_from_deleted_activities', 'mod_bigbluebuttonbn');
             ksort($courses);
         }
-        $context = (object) [
-            'bbbid' => $this->destinationinstance->get_instance_id(),
-            'has_recordings' => true,
-            'bbbsourceid' => 0,
-            'recordings' => (object) [],
+        $templatedata = (object) [
+            'session' => (object) [
+                'bbbid' => $this->destinationinstance->get_instance_id(),
+                'has_recordings' => true,
+                'bbbsourceid' => 0,
+            ],
+            'recordings' => (object) [
+                'session' => (object) [],
+            ]
         ];
 
         if (!empty($this->sourceinstanceid)) {
-            $context->sourceid = $this->sourceinstanceid;
-            $context->search = [
+            $templatedata->session->sourceid = $this->sourceinstanceid;
+            $templatedata->session->searchbutton = [
                 'value' => ''
             ];
             $sourceinstance = instance::get_from_instanceid($this->sourceinstanceid);
             if ($sourceinstance->is_type_room_only()) {
-                $context->has_recordings = false;
+                $templatedata->session->has_recordings = false;
             }
-            $context->bbbsourceid = $sourceinstance->get_instance_id();
+            $templatedata->session->bbbsourceid = $sourceinstance->get_instance_id();
         }
 
         $actionurl = $this->destinationinstance->get_page_url('import', [
@@ -142,12 +146,12 @@ class import implements renderable, templatable {
                 $selectrecords,
                 $this->sourceinstanceid ?? ""
             );
-            $context->bbb_select = $select->export_for_template($output);
+            $templatedata->bbb_select = $select->export_for_template($output);
         }
-        $context->sourcecourseid = $this->sourcecourseid ?? 0;
+        $templatedata->sourcecourseid = $this->sourcecourseid ?? 0;
 
         // Course selector.
-        $context->course_select = (new \single_select(
+        $templatedata->course_select = (new \single_select(
             $actionurl,
             'sourcecourseid',
             $courses,
@@ -155,7 +159,7 @@ class import implements renderable, templatable {
         ))->export_for_template($output);
 
         if (!is_null($this->sourcecourseid)) {
-            $context->has_selected_course = true;
+            $templatedata->has_selected_course = true;
         }
 
         if (!empty($this->sourcecourseid) && !empty($this->sourceinstanceid)) {
@@ -189,7 +193,7 @@ class import implements renderable, templatable {
                         }
                     }
         
-                    $context->recordings->output = $recordingsoutput;
+                    $templatedata->recordings->output = $recordingsoutput;
                 }
         
                 // Handle warnings if any
@@ -203,11 +207,11 @@ class import implements renderable, templatable {
         
         // Back button.
         $destinationurl = $this->destinationinstance->get_page_url($this->originpage, $this->originparams);
-        $context->back_button = (new \single_button(
+        $templatedata->back_button = (new \single_button(
             $destinationurl,
             get_string('view_recording_button_return', 'mod_bigbluebuttonbn')
         ))->export_for_template($output);
 
-        return $context;
+        return $templatedata;
     }
 }

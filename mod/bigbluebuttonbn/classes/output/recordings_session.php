@@ -55,7 +55,7 @@ class recordings_session implements renderable, templatable {
     public function export_for_template(renderer_base $output): stdClass {
         $isrecordedtype = $this->instance->is_type_room_and_recordings() || $this->instance->is_type_recordings_only();
 
-        $context = (object) [
+        $templatedata = (object) [
             'bbbid' => $this->instance->get_instance_id(),
             'groupid' => $this->instance->get_group_id(),
             'has_recordings' => $this->instance->is_recorded() && $isrecordedtype,
@@ -77,7 +77,7 @@ class recordings_session implements renderable, templatable {
                 ]),
                 get_string('view_recording_button_import', 'mod_bigbluebuttonbn')
             );
-            $context->import_button = $button->export_for_template($output);
+            $templatedata->import_button = $button->export_for_template($output);
 
             // TODO: Remove these after completion of the new import view.
             $buttonalt = new \single_button(
@@ -88,9 +88,9 @@ class recordings_session implements renderable, templatable {
                 ]),
                 get_string('view_recording_button_import', 'mod_bigbluebuttonbn') . ' (alt)'
             );
-            $context->import_buttonalt = $buttonalt->export_for_template($output);
+            $templatedata->import_buttonalt = $buttonalt->export_for_template($output);
         }
 
-        return $context;
+        return $templatedata;
     }
 }
