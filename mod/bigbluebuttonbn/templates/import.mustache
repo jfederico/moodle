@@ -54,7 +54,9 @@
         </div>
     </div>
     {{#has_selected_course}}
+        IMPORT/HAS_SELECTED_COURSE<br>
         {{< mod_bigbluebuttonbn/recordings_table}}
+            IMPORT/RECORDINGS_TABLE<br>
             {{$title}}{{#str}} view_recording_button_import, mod_bigbluebuttonbn {{/str}}{{/title}}
             {{$tools}}import{{/tools}}
             {{$removeimportedid}}{{bbboriginid}}{{/removeimportedid}}
@@ -67,6 +69,7 @@
         {{/mod_bigbluebuttonbn/recordings_table}}
     {{/has_selected_course}}
     {{^has_selected_course}}
+        HAS_NOT_SELECTED_COURSE<br>
         <span class="text-warning">{{#str}} view_recording_select_course, mod_bigbluebuttonbn {{/str}}</span>
     {{/has_selected_course}}
     <div class="mt-3">
