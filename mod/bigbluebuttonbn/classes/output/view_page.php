@@ -130,7 +130,7 @@ class view_page implements renderable, templatable {
                     // Format date before passing it to Mustache.
                     foreach ($recordingsoutput as &$recording) {
                         if (!empty($recording['date'])) {
-                            $recording['date'] = date('F j, Y, g:i A', $recording['date'] / 1000); // Convert milliseconds to seconds.
+                            $recording['date'] = userdate($recording['date'] / 1000, '%B %d, %Y, %I:%M %p');
                         }
                     }
     

@@ -55,6 +55,7 @@
     </div>
     {{#has_selected_course}}
         {{< mod_bigbluebuttonbn/recordingsyui_table}}
+            {{$preamble}}TEST3<br>{{/preamble}}
             {{$title}}{{#str}} view_recording_button_import, mod_bigbluebuttonbn {{/str}}{{/title}}
             {{$tools}}import{{/tools}}
             {{$removeimportedid}}{{bbboriginid}}{{/removeimportedid}}

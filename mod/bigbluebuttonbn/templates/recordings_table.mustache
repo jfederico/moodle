@@ -35,6 +35,18 @@
             {{>core/notification}}
         {{/recordingwarnings}}
     </div>
+    <div>
+        {{#search}}
+            {{>mod_bigbluebuttonbn/search_input_recordings}}
+        {{/search}}
+        <div {{!
+            }} id="bigbluebuttonbn-recording-table-{{uniqid}}"{{!
+            }} data-bbbid="{{$bbbid}}{{bbbid}}-test{{/bbbid}}"{{!
+            }} data-tools="{{$tools}}protect,unprotect,publish,unpublish,delete{{/tools}}"{{!
+            }} data-group-id="{{groupid}}"{{!
+            }} {{$otherattributes}}{{/otherattributes}}{{!
+        }}></div>
+    </div>
     {{#recordings.output}}
         {{#first}}
         <div class="row mb-3 font-weight-bold">

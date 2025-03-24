@@ -88,13 +88,19 @@ class import implements renderable, templatable {
             ksort($courses);
         }
         $templatedata = (object) [
+            'instanceid' => $this->destinationinstance->get_instance_id(),
             'session' => (object) [
                 'bbbid' => $this->destinationinstance->get_instance_id(),
                 'has_recordings' => true,
                 'bbbsourceid' => 0,
             ],
             'recordings' => (object) [
-                'session' => (object) [],
+                'session' => (object) [
+                    'bbbid' => $this->destinationinstance->get_instance_id(),
+                    'has_recordings' => true,
+                    'bbbsourceid' => 0,
+                ],
+                'output' => (object) [],
             ]
         ];
 
@@ -189,7 +195,7 @@ class import implements renderable, templatable {
                     // Format dates properly.
                     foreach ($recordingsoutput as &$recording) {
                         if (!empty($recording['date'])) {
-                            $recording['date'] = date('F j, Y, g:i A', $recording['date'] / 1000);
+                            $recording['date'] = userdate($recording['date'] / 1000, '%B %d, %Y, %I:%M %p');
                         }
                     }
         
