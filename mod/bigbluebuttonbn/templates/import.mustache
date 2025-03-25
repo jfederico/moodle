@@ -57,12 +57,11 @@
         {{< mod_bigbluebuttonbn/recordings_table}}
             {{$title}}{{#str}} view_recording_button_import, mod_bigbluebuttonbn {{/str}}{{/title}}
             {{$tools}}import{{/tools}}
-            {{$bbbid}}{{session.bbbid}}{{/bbbid}}
-            {{$removeimportedid}}{{bbboriginid}}{{/removeimportedid}}
+            {{$bbbid}}{{recordings.session.bbbid}}{{/bbbid}}
             {{$otherattributes}} {{!
             }} data-import-mode="1" {{!
-            }} data-bbb-source-course-id="{{sourcecourseid}}" {{!
-            }} data-bbb-source-instance-id="{{session.bbbsourceid}}" {{!
+            }} data-bbb-source-course-id="{{recordings.session.sourcecourseid}}" {{!
+            }} data-bbb-source-instance-id="{{recordings.session.sourceinstanceid}}" {{!
             }} {{/otherattributes}}
         {{/mod_bigbluebuttonbn/recordings_table}}
     {{/has_selected_course}}

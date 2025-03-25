@@ -80,6 +80,7 @@ class recordings_session implements renderable, templatable {
             $templatedata->import_button = $button->export_for_template($output);
         }
 
+        error_log("recordings_session.php: export_for_template: templatedata: " . json_encode($templatedata));
         return $templatedata;
     }
 }

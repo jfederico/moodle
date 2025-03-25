@@ -89,31 +89,24 @@ class import implements renderable, templatable {
         }
         $templatedata = (object) [
             'instanceid' => $this->destinationinstance->get_instance_id(),
-            'session' => (object) [
-                'bbbid' => $this->destinationinstance->get_instance_id(),
-                'has_recordings' => true,
-                'bbbsourceid' => 0,
-            ],
             'recordings' => (object) [
                 'session' => (object) [
                     'bbbid' => $this->destinationinstance->get_instance_id(),
                     'has_recordings' => true,
-                    'bbbsourceid' => 0,
                 ],
                 'output' => (object) [],
             ]
         ];
 
         if (!empty($this->sourceinstanceid)) {
-            $templatedata->session->sourceid = $this->sourceinstanceid;
-            $templatedata->session->searchbutton = [
+            $templatedata->recordings->session->sourceinstanceid = $this->sourceinstanceid;
+            $templatedata->recordings->session->searchbutton = [
                 'value' => ''
             ];
             $sourceinstance = instance::get_from_instanceid($this->sourceinstanceid);
             if ($sourceinstance->is_type_room_only()) {
-                $templatedata->session->has_recordings = false;
+                $templatedata->recordings->session->has_recordings = false;
             }
-            $templatedata->session->bbbsourceid = $sourceinstance->get_instance_id();
         }
 
         $actionurl = $this->destinationinstance->get_page_url('import', [
@@ -154,7 +147,7 @@ class import implements renderable, templatable {
             );
             $templatedata->bbb_select = $select->export_for_template($output);
         }
-        $templatedata->sourcecourseid = $this->sourcecourseid ?? 0;
+        $templatedata->recordings->session->sourcecourseid = $this->sourcecourseid ?? 0;
 
         // Course selector.
         $templatedata->course_select = (new \single_select(
@@ -171,7 +164,7 @@ class import implements renderable, templatable {
         if (!empty($this->sourcecourseid) && !empty($this->sourceinstanceid)) {
             try {
                 $destinationinstanceid = $this->destinationinstance->get_instance_id();
-                $sourcebigbluebuttonbnid = $this->sourceinstanceid;
+                $sourceinstanceid = $this->sourceinstanceid;
                 $sourcecourseid = $this->sourcecourseid;
                 $tools = 'import';
                 $groupid = null; // Adjust as needed.
@@ -179,7 +172,7 @@ class import implements renderable, templatable {
                 // Call the new external function
                 $recordings = get_recordings_to_import::execute(
                     $destinationinstanceid,
-                    $sourcebigbluebuttonbnid,
+                    $sourceinstanceid,
                     $sourcecourseid,
                     $tools,
                     $groupid
@@ -218,6 +211,7 @@ class import implements renderable, templatable {
             get_string('view_recording_button_return', 'mod_bigbluebuttonbn')
         ))->export_for_template($output);
 
+        error_log("import.php: export_for_template: templatedata: " . json_encode($templatedata));
         return $templatedata;
     }
 }
