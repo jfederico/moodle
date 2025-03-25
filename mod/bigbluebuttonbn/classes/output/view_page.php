@@ -68,6 +68,7 @@ class view_page implements renderable, templatable {
             'recordings' => (object) [
                 'session' => (object) [],
                 'output' => (object) [],
+                'search' => true,
             ],
         ];
 

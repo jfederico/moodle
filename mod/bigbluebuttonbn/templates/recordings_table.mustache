@@ -100,6 +100,12 @@
 </div>    
 
 {{#js}}
-    require(['mod_bigbluebuttonbn/recordings']);
+    require([
+        'mod_bigbluebuttonbn/recordings',
+        'mod_bigbluebuttonbn/recordings_search'
+    ], function(recordings, recordingsSearch) {
+        console.log("Executing recordingsSearch.setupSearch");
+        recordingsSearch.setupSearch();
+    });
 {{/js}}
 {{/recordings.session.has_recordings}}
