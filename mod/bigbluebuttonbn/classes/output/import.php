@@ -34,7 +34,7 @@ use moodle_exception;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
-class import_page implements renderable, templatable {
+class import implements renderable, templatable {
     /** @var instance $destinationinstance */
     protected instance $destinationinstance;
 
