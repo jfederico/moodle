@@ -28,7 +28,7 @@ use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
-use mod_bigbluebuttonbn\output\import;
+use mod_bigbluebuttonbn\output\import_page;
 use mod_bigbluebuttonbn\plugin;
 
 require(__DIR__ . '/../../config.php');
@@ -55,7 +55,7 @@ $originurl = $destinationinstance->get_page_url('import_view', [
     'originparams' => http_build_query($originparams),
 ]);
 
-if (!(boolean) \mod_bigbluebuttonbn\local\config::importrecordings_enabled()) {
+if (!(boolean) config::importrecordings_enabled()) {
     notification::add(
         get_string('view_message_importrecordings_disabled', plugin::COMPONENT),
         notification::ERROR
@@ -77,7 +77,7 @@ $PAGE->set_heading($course->fullname);
 $renderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
 
 try {
-    $renderedinfo = $renderer->render(new import($destinationinstance, $sourcecourseid, $sourceinstanceid, $originpage, $originparams));
+    $renderedinfo = $renderer->render(new import_page($destinationinstance, $sourcecourseid, $sourceinstanceid, $originpage, $originparams));
 } catch (server_not_available_exception $e) {
     bigbluebutton_proxy::handle_server_not_available($instance);
 }
