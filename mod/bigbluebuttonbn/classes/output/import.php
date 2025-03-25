@@ -211,7 +211,6 @@ class import implements renderable, templatable {
             get_string('view_recording_button_return', 'mod_bigbluebuttonbn')
         ))->export_for_template($output);
 
-        error_log("import.php: export_for_template: templatedata: " . json_encode($templatedata));
         return $templatedata;
     }
 }
