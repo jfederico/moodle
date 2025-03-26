@@ -102,9 +102,10 @@
 {{#js}}
     require([
         'mod_bigbluebuttonbn/recordings',
+        'mod_bigbluebuttonbn/recordings_pagination',
         'mod_bigbluebuttonbn/recordings_search'
-    ], function(recordings, recordingsSearch) {
-        console.log("Executing recordingsSearch.setupSearch");
+    ], function(recordings, recordingsPagination, recordingsSearch) {
+        recordingsPagination.setupPagination();
         recordingsSearch.setupSearch();
     });
 {{/js}}

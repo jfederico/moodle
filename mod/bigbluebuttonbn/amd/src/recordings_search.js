@@ -21,20 +21,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/* eslint no-console: "off" */
-
 /**
  * Filters the recordings table by text input across all columns.
  */
 export const setupSearch = () => {
-    console.log("[recordings_search] setupSearch initialized");
-
     const searchInput = document.getElementById("recordings-search-input");
     const searchButton = document.getElementById("recordings-search-button");
     const tableContainer = document.querySelector(".mod_bigbluebuttonbn_recordings_table");
 
     if (!searchInput || !searchButton || !tableContainer) {
-        console.warn("Search not initialized: missing elements");
         return;
     }
 
@@ -42,21 +37,20 @@ export const setupSearch = () => {
 
     const filterRows = () => {
         const query = searchInput.value.trim().toLowerCase();
-        if (!query) {
-            rows.forEach(row => {
-                row.style.display = "flex";
-            });
-            return;
-        }
 
         rows.forEach(row => {
             const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? "flex" : "none";
+            const match = query === "" || text.includes(query);
+            row.dataset.filtered = match ? "true" : "false";
         });
+
+        window.currentPage = 1;
+        if (typeof window.updatePagination === 'function') {
+            window.updatePagination();
+        }
     };
 
     searchButton.addEventListener("click", () => {
-        console.log("[recordings_search] search button clicked");
         filterRows();
     });
 
@@ -64,5 +58,10 @@ export const setupSearch = () => {
         if (e.key === "Enter") {
             filterRows();
         }
+    });
+
+    // Initialize filtered state to ensure first load behaves correctly.
+    rows.forEach(row => {
+        row.dataset.filtered = "true";
     });
 };

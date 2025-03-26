@@ -54,12 +54,24 @@ export const setupPagination = () => {
      * @param {number} page - The current page to display.
      */
     function renderTable(page) {
-        rows.forEach((row, index) => {
-            if (index >= (page - 1) * itemsPerPage && index < page * itemsPerPage) {
+        let visibleIndex = 0;
+
+        rows.forEach(row => {
+            if (row.dataset.filtered === "false") {
+                row.style.display = "none";
+                return;
+            }
+
+            const start = (page - 1) * itemsPerPage;
+            const end = page * itemsPerPage;
+
+            if (visibleIndex >= start && visibleIndex < end) {
                 row.style.display = "flex";
             } else {
                 row.style.display = "none";
             }
+
+            visibleIndex++;
         });
     }
 
@@ -67,6 +79,7 @@ export const setupPagination = () => {
      * Updates pagination buttons and dropdown.
      */
     async function updatePaginationControls() {
+        const filteredRows = rows.filter(row => row.dataset.filtered !== "false");
         pageSelect.innerHTML = "";
 
         let pageString;
@@ -75,6 +88,8 @@ export const setupPagination = () => {
         } catch (error) {
             pageString = "Page";
         }
+
+        totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
 
         for (let i = 1; i <= totalPages; i++) {
             let option = document.createElement("option");
@@ -139,6 +154,21 @@ export const setupPagination = () => {
         currentPage = parseInt(e.target.value, 10);
         renderTable(currentPage);
         updatePaginationControls();
+    });
+
+    /**
+     * Expose pagination update function to be used by search.
+     */
+    window.updatePagination = () => {
+        currentPage = 1;
+        renderTable(currentPage);
+        updatePaginationControls();
+    };
+
+    // Default all rows to visible and flagged as included.
+    rows.forEach(row => {
+        row.dataset.filtered = "true";
+        row.style.display = "flex";
     });
 
     renderTable(currentPage);
