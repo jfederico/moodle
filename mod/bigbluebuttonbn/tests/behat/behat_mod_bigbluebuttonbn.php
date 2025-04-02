@@ -371,6 +371,36 @@ XPATH
     }
 
     /**
+     * Click the import icon for a recording by name.
+     *
+     * @When /^I import the recording "(?P<recordingname>[^"]+)"$/
+     */
+    public function i_import_the_recording($recordingname) {
+        // Find the row/container with the recording name.
+        $row = $this->find('xpath', "//div[contains(@class, 'row') or contains(@class, 'd-flex')][.//*[contains(text(), \"$recordingname\")]]");
+
+        if (!$row) {
+            throw new ElementNotFoundException($this->getSession(), 'recording row', 'xpath', $recordingname);
+        }
+
+        // Find the import icon inside that row.
+        $importicon = $row->find('css', "a.action-icon[data-action='import']");
+        if (!$importicon || !$importicon->isVisible()) {
+            throw new ElementNotFoundException($this->getSession(), 'import icon', 'css', "a.action-icon[data-action='import']");
+        }
+
+        // Click it (JS fallback included).
+        try {
+            $importicon->click();
+        } catch (\Exception $e) {
+            $this->getSession()->executeScript("arguments[0].click();", [$importicon]);
+        }
+
+        // Optional wait for import to be processed
+        $this->getSession()->wait(300);
+    }
+
+    /**
      * Ensures a CSS element exists before continuing.
      */
     protected function ensure_element_exists($type, $selector) {
