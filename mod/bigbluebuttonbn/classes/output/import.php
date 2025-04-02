@@ -67,7 +67,7 @@ class import implements renderable, templatable {
         array $originparams = []
     ) {
         $this->destinationinstance = $destinationinstance;
-        $this->sourcecourseid = $sourcecourseid >= 0 ? $sourcecourseid : null;
+        $this->sourcecourseid = $sourcecourseid >= 0 || $sourcecourseid === 0 ? (int) $sourcecourseid : null;
         $this->sourceinstanceid = $sourceinstanceid >= 0 ? (int) $sourceinstanceid : 0;
         $this->originpage = $originpage;
         $this->originparams = $originparams;
@@ -94,12 +94,14 @@ class import implements renderable, templatable {
         // Course selector.
         $templatedata->course_select = $this->build_course_selector($output, $actionurl);
 
-        if ($this->sourcecourseid !== null) {
+        if ($this->sourcecourseid !== null || $this->sourcecourseid === 0) {
             $templatedata->has_selected_course = true;
         }
 
         // Attempt to load and render recordings for import.
-        if (!empty($this->sourcecourseid) && !empty($this->sourceinstanceid)) {
+        $importingfromdeleted = $this->sourcecourseid === 0;
+        $importingfromcourse = $this->sourcecourseid > 0 && !empty($this->sourceinstanceid);
+        if ($importingfromdeleted || $importingfromcourse) {
             $templatedata = $this->add_recordings_to_template($templatedata);
         }
 
@@ -116,6 +118,7 @@ class import implements renderable, templatable {
      */
     protected function initialize_template_data(): stdClass {
         $courses = roles::import_get_courses_for_select($this->destinationinstance);
+
         if (config::get('importrecordings_from_deleted_enabled')) {
             $courses[0] = get_string('recordings_from_deleted_activities', 'mod_bigbluebuttonbn');
             ksort($courses);
@@ -176,10 +179,6 @@ class import implements renderable, templatable {
                 continue;
             }
             $selectrecords[$cm->instance] = $cm->name;
-        }
-
-        if (config::get('importrecordings_from_deleted_enabled')) {
-            $selectrecords[0] = get_string('recordings_from_deleted_activities', 'mod_bigbluebuttonbn');
         }
 
         $actionurl->param('sourcecourseid', $this->sourcecourseid);
