@@ -25,6 +25,7 @@
  * @author    Darko Miletic  (darko.miletic [at] gmail [dt] com)
  */
 
+use mod_bigbluebuttonbn\extension;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
@@ -77,7 +78,27 @@ $PAGE->set_title($cm->name);
 $PAGE->set_cacheable(false);
 $PAGE->set_heading($course->fullname);
 
-// Output starts.
+// Extension override support.
+$extensionnames = \core_component::get_plugin_list(extension::BBB_EXTENSION_PLUGIN_NAME);
+$sortedextensionnames = extension::get_sorted_plugins_list($extensionnames);
+
+foreach ($sortedextensionnames as $name) {
+    // Skip disabled plugins.
+    $isdisabled = get_config(extension::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'disabled');
+    if ($isdisabled) {
+        continue;
+    }
+
+    // Check if this extension has a view.php override.
+    $overridefile = __DIR__ . "/extension/{$name}/view.php";
+    if (file_exists($overridefile)) {
+        // Pass the instance to the extension if needed.
+        require($overridefile);
+        exit;
+    }
+}
+
+// Local output starts.
 $renderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
 
 try {
