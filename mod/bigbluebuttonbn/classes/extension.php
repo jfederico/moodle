@@ -40,6 +40,9 @@ class extension {
      */
     const BBB_EXTENSION_PLUGIN_NAME = 'bbbext';
 
+    private static $plugin_list_callback = null;
+    private static $sorted_plugin_list_callback = null;
+
     /**
      * Invoke a subplugin hook that will return additional parameters
      *
@@ -145,6 +148,15 @@ class extension {
         }
         ksort($result);
         return $result;
+    }
+
+    // Test helper hooks
+    public static function override_get_plugin_list_callback(?callable $callback): void {
+        self::$plugin_list_callback = $callback;
+    }
+
+    public static function override_get_sorted_plugins_list_callback(?callable $callback): void {
+        self::$sorted_plugin_list_callback = $callback;
     }
 
     /**
