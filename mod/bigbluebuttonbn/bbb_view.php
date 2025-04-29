@@ -25,12 +25,11 @@
 
 use core\notification;
 use mod_bigbluebuttonbn\instance;
+use mod_bigbluebuttonbn\local\recording_factory;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\logger;
 use mod_bigbluebuttonbn\meeting;
-use mod_bigbluebuttonbn\plugin;
-use mod_bigbluebuttonbn\recording;
 
 require_once(dirname(dirname(dirname(__FILE__))) . '/config.php');
 
@@ -144,7 +143,8 @@ switch (strtolower($action)) {
         break;
 
     case 'play':
-        $recording = recording::get_record(['id' => $rid]);
+        $recordingclass  = recording_factory::resolve();
+        $recording = $recordingclass::get_record(['id' => $rid]);
         if ($href = $recording->get_remote_playback_url($rtype)) {
             logger::log_recording_played_event($instance, $rid);
             redirect(urldecode($href));
