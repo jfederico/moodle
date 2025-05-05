@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for helloworld mod plugin.
+ * Capability definitions for mod_helloworld plugin.
  *
  * @package    mod_helloworld
  * @copyright 2024 Your Name (your.email@example.com)
@@ -24,7 +24,24 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = '1.0';
-$maturity = MATURITY_STABLE;
+$capabilities = [
+    'mod/helloworld:view' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'description' => [
+            'type' => 'text',
+            'value' => 'Allow viewing Hello World activities.'
+        ],
+        'defaultallow' => 1
+    ],
+    
+    'mod/helloworld:addinstance' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'description' => [
+            'type' => 'text',
+            'value' => 'Allow adding new Hello World activities.'
+        ],
+        'defaultallow' => 0
+    ]
+];

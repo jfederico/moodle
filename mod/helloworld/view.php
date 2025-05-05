@@ -15,16 +15,21 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for helloworld mod plugin.
+ * View page for Hello World activity.
  *
  * @package    mod_helloworld
  * @copyright 2024 Your Name (your.email@example.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/mod/helloworld/lib.php');
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = '1.0';
-$maturity = MATURITY_STABLE;
+function helloworld_view_page($course, $module) {
+    global $OUTPUT;
+
+    echo $OUTPUT->header();
+    echo '<div class="helloworld-container">';
+    mod_helloworld_view($module->id);
+    echo '</div>';
+    echo $OUTPUT->footer();
+}

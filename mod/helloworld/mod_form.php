@@ -15,16 +15,35 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for helloworld mod plugin.
+ * Form definition for adding a new Hello World instance.
  *
  * @package    mod_helloworld
  * @copyright 2024 Your Name (your.email@example.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/mod/helloworld/lib.php');
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = '1.0';
-$maturity = MATURITY_STABLE;
+class mod_helloworld_mod_form extends moodleform {
+    public function __construct($courseid = 0, $cmid = null) {
+        parent::__construct();
+        $this->courseid = $courseid;
+        $this->cmid = $cmid;
+    }
+
+    public function get_data() {
+        return $this->data;
+    }
+
+    public function definition() {
+        $form = $this->_form;
+
+        // Add form elements here
+        $form->addElement('text', 'name', get_string('modform_instance_name', 'mod_helloworld'), [
+            'required' => true,
+            'maxlength' => 255
+        ]);
+
+        $form->add_action_buttons();
+    }
+}

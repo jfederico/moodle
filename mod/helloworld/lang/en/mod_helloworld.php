@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for helloworld mod plugin.
+ * English language strings for mod_helloworld plugin.
  *
  * @package    mod_helloworld
  * @copyright 2024 Your Name (your.email@example.com)
@@ -24,7 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = '1.0';
-$maturity = MATURITY_STABLE;
+$string = [
+    'pluginname' => 'Hello World',
+    'helloworld_greeting' => 'Hello World!',
+    'modform_instance_name' => 'Instance Name',
+    'settings_global_settings' => 'Global Settings',
+    'capabilities_view' => 'View Hello World activities',
+    'capabilities_addinstance' => 'Add new Hello World instances'
+];
