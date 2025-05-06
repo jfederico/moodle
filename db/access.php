@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for mod_hellodeepcode plugin.
+ * Capability definitions for mod_hellodeepcode plugin.
  *
  * @package    mod_hellodeepcode
  * @copyright 2024 Deepcode AI (contact@deepcode.ai)
@@ -24,10 +24,20 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = 'main';
-$maturity = MATURITY_STABLE;
+$capabilities = array(
+    // Capability to view instances of this module
+    'mod/hellodeepcode:view' => array(
+        'riskbitmask' => 0,
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'defaultvalue' => true,
+    ),
 
-// Plugin dependencies (if any)
-$dependencies = array();
+    // Capability to add new instances of this module
+    'mod/hellodeepcode:addinstance' => array(
+        'riskbitmask' => 0,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'defaultvalue' => false,
+    ),
+);

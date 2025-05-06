@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for mod_hellodeepcode plugin.
+ * Form definition for mod_hellodeepcode plugin.
  *
  * @package    mod_hellodeepcode
  * @copyright 2024 Deepcode AI (contact@deepcode.ai)
@@ -24,10 +24,31 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = 'main';
-$maturity = MATURITY_STABLE;
+require_once(dirname(__FILE__) . '/../../config.php');
+require_once($CFG->dirroot . '/mod/forum/db/access.php');
 
-// Plugin dependencies (if any)
-$dependencies = array();
+class mod_hellodeepcode_mod_form extends moodle_mod_form {
+    /**
+     * Definition of the form fields.
+     */
+    protected function definition() {
+        $form = parent::definition();
+
+        // Add custom fields here
+        $form->addElement('text', 'name', get_string('instance_name', 'mod_hellodeepcode'), array(
+            'required' => true,
+            'maxlength' => 255,
+        ));
+
+        return $form;
+    }
+
+    /**
+     * Process the form submission.
+     */
+    public function validation() {
+        parent::validation();
+        
+        // Add custom validation if needed
+    }
+}

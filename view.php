@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for mod_hellodeepcode plugin.
+ * View page for mod_hellodeepcode plugin.
  *
  * @package    mod_hellodeepcode
  * @copyright 2024 Deepcode AI (contact@deepcode.ai)
@@ -24,10 +24,24 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = 'main';
-$maturity = MATURITY_STABLE;
+require_once(dirname(__FILE__) . '/../../config.php');
+require_once($CFG->dirroot . '/mod/hellodeepcode/lib.php');
 
-// Plugin dependencies (if any)
-$dependencies = array();
+// Get the course module
+$cm = get_course_module($id);
+if (!$cm) {
+    redirect($CFG->wwwroot . '/course/view.php?id=' . $CFG->current_course->id, 
+        get_string('invalidmodule', 'error'), null, NOTICE_ERROR);
+}
+
+// Check capabilities
+if (!has_capability('mod/hellodeepcode:view', context_module::instance($cm->id))) {
+    throw new moodle_exception(get_string('nopermission'));
+}
+
+// Output the content
+echo $CFG->header;
+echo '<div class="hello-deepcode">';
+echo get_string('hello_deepcode', 'mod_hellodeepcode');
+echo '</div>';
+echo $CFG->footer;

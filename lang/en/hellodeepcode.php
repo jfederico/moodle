@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version file for mod_hellodeepcode plugin.
+ * English language strings for mod_hellodeepcode plugin.
  *
  * @package    mod_hellodeepcode
  * @copyright 2024 Deepcode AI (contact@deepcode.ai)
@@ -24,10 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$version = 2024010100.00;
-$release = '1.0.0';
-$branch = 'main';
-$maturity = MATURITY_STABLE;
-
-// Plugin dependencies (if any)
-$dependencies = array();
+// General strings
+$string['pluginname'] = 'Hello Deepcode';
+$string['hello_deepcode'] = 'Hello Deepcode!';
+$string['instance_name'] = 'Instance Name';
