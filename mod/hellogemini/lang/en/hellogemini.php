@@ -16,7 +16,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the hellogemini module.
+ * English language strings for the hellogemini module.
  *
  * @package    mod_hellogemini
  * @copyright  2025 Your Name
@@ -25,8 +25,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_hellogemini'; // Full name of the plugin (used for diagnostics).
-$plugin->version   = 2025050600;        // YYYYMMDDHH (year, month, day, 24-hr time).
-$plugin->requires  = 2023100900;        // Requires Moodle 4.3 (suitable for Moodle 5.1dev development).
-$plugin->maturity  = MATURITY_ALPHA;    // How stable the plugin is (MATURITY_ALPHA, MATURITY_BETA, MATURITY_RC, MATURITY_STABLE).
-$plugin->release   = 'v0.1';            // Human-readable version name.
+$string['pluginname'] = 'Hello Gemini';
+$string['modulename'] = 'Hello Gemini';
+$string['modulenameplural'] = 'Hello Geminis';
+$string['modulename_help'] = 'Use the Hello Gemini module to display a friendly greeting.';
+$string['hellogemini:addinstance'] = 'Add a new Hello Gemini activity';
+$string['hellogemini:view'] = 'View Hello Gemini content';
+$string['displaymessage'] = 'Hello Gemini';
+$string['instancename'] = 'Hello Gemini name';
+$string['hellogeminifield'] = 'Hello Gemini display text'; // Example field, not used in current basic version
+$string['pluginadministration'] = 'Hello Gemini administration';

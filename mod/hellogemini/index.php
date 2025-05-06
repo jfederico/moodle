@@ -16,17 +16,26 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the hellogemini module.
+ * Index page for the hellogemini module.
+ *
+ * This page usually lists all instances of the hellogemini module in a course.
+ * For simple modules, it often just redirects to the course view page.
  *
  * @package    mod_hellogemini
  * @copyright  2025 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once('../../config.php');
 
-$plugin->component = 'mod_hellogemini'; // Full name of the plugin (used for diagnostics).
-$plugin->version   = 2025050600;        // YYYYMMDDHH (year, month, day, 24-hr time).
-$plugin->requires  = 2023100900;        // Requires Moodle 4.3 (suitable for Moodle 5.1dev development).
-$plugin->maturity  = MATURITY_ALPHA;    // How stable the plugin is (MATURITY_ALPHA, MATURITY_BETA, MATURITY_RC, MATURITY_STABLE).
-$plugin->release   = 'v0.1';            // Human-readable version name.
+$id = required_param('id', PARAM_INT); // Course ID.
+
+// Get the course record.
+$course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
+
+// Require the user to be logged into the course.
+require_course_login($course);
+
+// Redirect to the course view page.
+$url = new moodle_url('/course/view.php', ['id' => $id]);
+redirect($url);

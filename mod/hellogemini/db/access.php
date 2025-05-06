@@ -16,7 +16,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the hellogemini module.
+ * Capability definitions for the hellogemini module.
  *
  * @package    mod_hellogemini
  * @copyright  2025 Your Name
@@ -25,8 +25,26 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_hellogemini'; // Full name of the plugin (used for diagnostics).
-$plugin->version   = 2025050600;        // YYYYMMDDHH (year, month, day, 24-hr time).
-$plugin->requires  = 2023100900;        // Requires Moodle 4.3 (suitable for Moodle 5.1dev development).
-$plugin->maturity  = MATURITY_ALPHA;    // How stable the plugin is (MATURITY_ALPHA, MATURITY_BETA, MATURITY_RC, MATURITY_STABLE).
-$plugin->release   = 'v0.1';            // Human-readable version name.
+$capabilities = [
+    'mod/hellogemini:view' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'guest' => CAP_ALLOW,
+            'student' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+    'mod/hellogemini:addinstance' => [
+        'riskbitmask' => RISK_XSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'moodle/course:manageactivities',
+    ],
+];
