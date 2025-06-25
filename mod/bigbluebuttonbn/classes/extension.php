@@ -79,7 +79,7 @@ class extension {
      * @param array|null $newparameters additional parameters for the constructor.
      * @return array
      */
-    protected static function get_instances_implementing(string $classname, ?array $newparameters = []): array {
+    public static function get_instances_implementing(string $classname, ?array $newparameters = []): array {
         $classes = self::get_classes_implementing($classname);
         ksort($classes); // Make sure all extension classes are returned in the correct order.
         return array_map(function($targetclassname) use ($newparameters) {
@@ -261,61 +261,41 @@ class extension {
     }
 
     /**
-     * Handle plugin-specific function calls (overrides or appends).
+     * Call all navigation_override_addon or navigation_append_addon implementations in subplugins to extend settings navigation.
      *
-     * @param string $basefunctionname The base function name (without plugin prefix).
-     * @param string $prefix The prefix to determine function naming ('override' or 'append').
-     * @param bool $returnonfirst Whether to return immediately after the first successful execution.
-     * @param mixed ...$args A variable number of arguments to pass to the override function.
-     * @return bool Returns true if at least one function was executed, false otherwise.
+     * @param \settings_navigation $settingsnav
+     * @param \navigation_node $nodenav
+     * @return void
      */
-    public static function handle_plugin_functions(string $basefunctionname, string $prefix, bool $returnonfirst, ...$args): bool {
-        // Get all subplugins of bigbluebuttonbn.
-        $extensionnames = \core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME);
-        $sortedextensionnames = self::get_sorted_plugins_list($extensionnames);
-
-        $executed = false;
-
-        // Loop through subplugins and execute functions in order.
-        foreach ($sortedextensionnames as $name) {
-            // Check if the plugin is disabled.
-            $isdisabled = get_config(self::BBB_EXTENSION_PLUGIN_NAME . '_' . $name, 'disabled');
-            if ($isdisabled) {
-                continue; // Skip disabled plugins unless explicitly included.
-            }
-
-            $functionname = $name . '_' . $prefix . '_' . $basefunctionname;
-            if (function_exists($functionname)) {
-                call_user_func_array($functionname, $args);
-                $executed = true;
-
-                if ($returnonfirst) {
-                    return true; // Stop execution early for overrides.
-                }
-            }
+    public static function navigation_addons_extend_settings_navigation(\settings_navigation $settingsnav, \navigation_node $nodenav): void {
+        // 1. Check for overrides.
+        $overrides = self::get_instances_implementing(\mod_bigbluebuttonbn\local\extension\navigation_override_addon::class);
+        if (!empty($overrides) && $overrides[0] !== null) {
+            // Call the first override and return.
+            $overrides[0]->override_settings_navigation($settingsnav, $nodenav);
+            return;
         }
 
-        return $executed;
-    }
+        // 2. Run core/default logic here.
+        global $USER;
+        // Don't add validate completion if the callback for meetingevents is NOT enabled.
+        if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
+            return;
+        }
+        // Don't add validate completion if user is not allowed to edit the activity.
+        $context = \context_module::instance($settingsnav->get_page()->cm->id);
+        if (!has_capability('moodle/course:manageactivities', $context, $USER->id)) {
+            return;
+        }
+        // Default navigation addition.
+        $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
+        $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
+            $completionvalidate, \navigation_node::TYPE_CONTAINER);
 
-    /**
-     * Handle plugin-specific overrides for a given function.
-     *
-     * @param string $basefunctionname The base function name (without plugin prefix).
-     * @param mixed ...$args A variable number of arguments to pass to the override function.
-     * @return bool Returns true if an override was found and executed, false otherwise.
-     */
-    public static function handle_overrides(string $basefunctionname, ...$args): bool {
-        return self::handle_plugin_functions($basefunctionname, 'override', true, ...$args);
-    }
-
-    /**
-     * Handle plugin-specific appends for a given function.
-     *
-     * @param string $basefunctionname The base function name (without plugin prefix).
-     * @param mixed ...$args A variable number of arguments to pass to the append function.
-     */
-    public static function handle_appends(string $basefunctionname, ...$args) {
-        self::handle_plugin_functions($basefunctionname, 'append', false, ...$args);
+        // 3. Call all appends.
+        $appends = self::get_instances_implementing(\mod_bigbluebuttonbn\local\extension\navigation_append_addon::class);
+        foreach ($appends as $addon) {
+            $addon->append_settings_navigation($settingsnav, $nodenav);
+        }
     }
 }
