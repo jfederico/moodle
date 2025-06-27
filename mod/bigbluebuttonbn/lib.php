@@ -582,7 +582,7 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
 
     // 1. Check for overrides.
     $overrideevent = new extend_settings_navigation_override($settingsnav, $nodenav);
-    if (extension::execute_first_override_callback($hookmanager, $overrideevent)) {
+    if (extension::execute_first_hook_callback($hookmanager, $overrideevent)) {
         return; // Stop here – skip default logic and appends.
     }
 

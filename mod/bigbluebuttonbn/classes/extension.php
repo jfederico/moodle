@@ -278,29 +278,34 @@ class extension {
     }
 
     /**
-     * Find and execute the first valid override callback for a given event, using the hook manager and plugin order.
+     * Find and execute the first valid hook callback for a given event, using the hook manager and plugin order.
      *
      * @param object $hookmanager The hook manager instance.
-     * @param object $overrideevent The event object (e.g., extend_settings_navigation_override).
+     * @param object $event The event object (e.g., extend_settings_navigation_override).
      * @return bool True if an override was found and executed, false otherwise.
      */
-    public static function execute_first_override_callback($hookmanager, $overrideevent): bool {
-        $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($overrideevent));
-        $sortedflippedenabledsubplugins = self::get_sorted_flipped_enabled_subplugins();
-        $filteredcallbacks = array_filter($allcallbacks, function($callback) use ($sortedflippedenabledsubplugins) {
+    public static function execute_first_hook_callback($hookmanager, $event): bool {
+        // Get all callbacks for the specific hook.
+        $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($event));
+        // Get the sorted and flipped list of enabled subplugins.
+        $subplugins = self::get_sorted_flipped_enabled_subplugins();
+        // Filter callbacks to only those that match enabled subplugins.
+        $filteredcallbacks = array_filter($allcallbacks, function($callback) use ($subplugins) {
             $subpluginname = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $callback['component']);
-            return isset($sortedflippedenabledsubplugins[$subpluginname]);
+            return isset($subplugins[$subpluginname]);
         });
-        usort($filteredcallbacks, function($a, $b) use ($sortedflippedenabledsubplugins) {
+        // Sort the filtered callbacks based on the subplugin order.
+        usort($filteredcallbacks, function($a, $b) use ($subplugins) {
             $a_sub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $a['component']);
             $b_sub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $b['component']);
-            return ($sortedflippedenabledsubplugins[$a_sub] ?? PHP_INT_MAX)
-                <=> ($sortedflippedenabledsubplugins[$b_sub] ?? PHP_INT_MAX);
+            return ($subplugins[$a_sub] ?? PHP_INT_MAX)
+                <=> ($subplugins[$b_sub] ?? PHP_INT_MAX);
         });
+        // If there are any filtered callbacks, execute the first one.
         if (!empty($filteredcallbacks)) {
             $firstcallback = $filteredcallbacks[0]['callback'];
             if (is_callable($firstcallback)) {
-                call_user_func($firstcallback, $overrideevent);
+                call_user_func($firstcallback, $event);
                 return true;
             }
         }
