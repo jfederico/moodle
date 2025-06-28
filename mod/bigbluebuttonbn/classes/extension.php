@@ -259,4 +259,41 @@ class extension {
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
     }
+
+    /**
+     * Get sorted and flipped list of enabled subplugins for this extension type.
+     *
+     * @return array The flipped sorted list of enabled subplugin names (name => sortorder)
+     */
+    public static function get_sorted_flipped_enabled_subplugins(): array {
+        $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
+        $enabledsubpluginnames = array_keys(
+            array_filter($allsubplugins, fn($sub) => $sub->is_enabled())
+        );
+        $sortedsubplugins = array_flip(
+            self::get_sorted_plugins_list(core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME))
+        );
+        // Filter to only enabled subplugins, preserving order.
+        return array_intersect_key($sortedsubplugins, array_flip($enabledsubpluginnames));
+    }
+
+    /**
+     * Get rendered output for override in the instance.
+     *
+     * @param \renderer_base $renderer
+     * @param instance $instance
+     * @return string Rendered information for the instance.
+     */
+    public static function get_rendered_output_override($renderer, $instance): ?string {
+        $subplugins = self::get_sorted_flipped_enabled_subplugins();
+        foreach ($subplugins as $subplugin => $sortorder) {
+            $outputclass = "\\" . self::BBB_EXTENSION_PLUGIN_NAME . "_{$subplugin}\\output\\view";
+            if (class_exists($outputclass)) {
+                return $renderer->render(new $outputclass($instance));
+            }
+        }
+
+        // Fallback to the default rendered output if no subplugin overrides it.
+        return null;
+    }
 }
