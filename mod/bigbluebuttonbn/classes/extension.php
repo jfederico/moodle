@@ -130,7 +130,6 @@ class extension {
                 }
                 $sortorder = $sortedlist[$sub->name];
                 $extensionclasses[$sortorder] = $targetclassname;
-                break; // Only one match per subplugin.
             }
         }
         return $extensionclasses;
