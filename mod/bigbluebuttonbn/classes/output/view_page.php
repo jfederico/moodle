@@ -131,7 +131,7 @@ class view_page implements renderable, templatable {
      *
      * @return bool
      */
-    protected function show_view_warning(): bool {
+    private function show_view_warning(): bool {
         if ($this->instance->is_admin()) {
             return true;
         }
