@@ -273,6 +273,8 @@ class extension {
      * Get sorted and flipped list of enabled subplugins for this extension type.
      *
      * @return array The flipped sorted list of enabled subplugin names (name => sortorder)
+     *
+     * TODO: Method to be removed from patch once MDL-84799 is resolved.
      */
     public static function get_sorted_flipped_enabled_subplugins(): array {
         $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
