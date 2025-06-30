@@ -91,6 +91,7 @@ class extension {
     /**
      * Get classes in enabled subplugins that extend or implement the given class/interface.
      * Tries both legacy (bigbluebuttonbn\) and modern (namespace after mod_bigbluebuttonbn\) locations.
+     * Uses get_sorted_flipped_enabled_subplugins for subplugin order.
      *
      * @param string $classname
      * @return array
@@ -102,33 +103,20 @@ class extension {
         $modidx = array_search('mod_bigbluebuttonbn', $classnamecomponents);
         $subnamespaces = $modidx !== false ? array_slice($classnamecomponents, $modidx + 1, -1) : [];
         $subnamespace = $subnamespaces ? implode('\\', $subnamespaces) : '';
-        $allsubs = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
+        $sortedsubplugins = self::get_sorted_flipped_enabled_subplugins(); // subplugin => sortorder
         $extensionclasses = [];
-        $names = core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME);
-        $sortedlist = self::get_sorted_plugins_list($names);
-        $sortedlist = array_flip($sortedlist);
-        foreach ($allsubs as $sub) {
-            if (!$sub->is_enabled()) {
-                continue;
-            }
-            // 1. Legacy location: \bbbext_{sub}\bigbluebuttonbn\{ClassBaseName}.
-            $legacyclass = "\\bbbext_{$sub->name}\\bigbluebuttonbn\\$classbasename";
-            // 2. Modern location: \bbbext_{sub}\{subnamespace}\{ClassBaseName}.
-            $modernclass = $subnamespace ? "\\bbbext_{$sub->name}\\$subnamespace\\$classbasename" : null;
+        foreach ($sortedsubplugins as $subplugin => $sortorder) {
+            // 1. Legacy location: \\bbbext_{subplugin}\\bigbluebuttonbn\\{ClassBaseName}
+            $legacyclass = "\\bbbext_{$subplugin}\\bigbluebuttonbn\\$classbasename";
+            // 2. Modern location: \\bbbext_{subplugin}\\{subnamespace}\\{ClassBaseName}
+            $modernclass = $subnamespace ? "\\bbbext_{$subplugin}\\$subnamespace\\$classbasename" : null;
             foreach ([$legacyclass, $modernclass] as $targetclassname) {
-                // Check if the class is defined and exists.
-                if (!$targetclassname || !class_exists($targetclassname)) {
+                if (!$targetclassname || !class_exists($targetclassname, true)) {
                     continue;
                 }
-                // Check if the class is a subclass of the given class/interface.
                 if (!is_subclass_of($targetclassname, $classname) && $targetclassname !== $classname) {
                     continue;
                 }
-                // Check if the subplugin is in the sorted list.
-                if (!isset($sortedlist[$sub->name])) {
-                    continue;
-                }
-                $sortorder = $sortedlist[$sub->name];
                 $extensionclasses[$sortorder] = $targetclassname;
             }
         }
