@@ -294,4 +294,24 @@ class extension {
         // Fallback to the default rendered output if no subplugin overrides it.
         return null;
     }
+
+    /**
+     * Get renderer override for the instance.
+     *
+     * @param instance $instance
+     * @return \mod_bigbluebuttonbn\output\renderer|null
+     */
+    public static function get_renderer_override($instance): ?\mod_bigbluebuttonbn\output\renderer {
+        $classes = self::get_classes_implementing(\mod_bigbluebuttonbn\output\renderer::class);
+        if (!empty($classes)) {
+            error_log("get_renderer_override: classes found: " . json_encode(implode(', ', $classes)));
+            $rendererclass = reset($classes);
+            if (class_exists($rendererclass)) {
+                global $PAGE;
+                return new $rendererclass($PAGE, $instance);
+            }
+        }
+        // Fallback to the default renderer if no subplugin overrides it.
+        return null;
+    }
 }

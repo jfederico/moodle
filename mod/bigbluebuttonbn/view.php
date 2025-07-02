@@ -79,11 +79,16 @@ $PAGE->set_cacheable(false);
 $PAGE->set_heading($course->fullname);
 
 // Output starts.
-$renderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
+$renderer = extension::get_renderer_override($instance);
+if (!$renderer) {
+    // If no renderer override is found, use the default renderer.
+    $renderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
+}
 
 try {
     $renderedinfo = extension::get_rendered_output_override($renderer, $instance);
     if (!$renderedinfo) {
+        // If no override is found, use the default view_page renderable.
         $renderedinfo = $renderer->render(new view_page($instance));
     }
 } catch (server_not_available_exception $e) {
