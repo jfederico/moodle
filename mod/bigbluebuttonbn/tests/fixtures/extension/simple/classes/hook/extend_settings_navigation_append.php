@@ -13,21 +13,29 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace bbbext_simple\hook;
+
+use moodle_url;
+
 /**
- * Language File.
+ * Class extend_settings_navigation_append example.
  *
  * @package   mod_bigbluebuttonbn
- * @copyright 2023 onwards, Blindside Networks Inc
+ * @copyright 2025 Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author    Laurent David (laurent@call-learning.fr)
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
+class extend_settings_navigation_append {
 
-defined('MOODLE_INTERNAL') || die();
-$string['completionextraisehandtwice'] = 'Raise hand twice';
-$string['completionextraisehandtwice_desc'] = 'Raise hand twice in a meeting.';
-$string['completionextraisehandtwice_help'] = 'Raise hand twice in a meeting.';
-$string['config_extension'] = 'Sample config extension setting';
-$string['newfield'] = 'New field';
-$string['newfielderror'] = 'New field cannot be empty';
-$string['pluginname'] = 'Simple BigBlueButtonPlugin';
-$string['settings_navigation_append'] = 'Append Navigation';
+    public static function append_settings_navigation($event): void {
+        $nodenav = $event->nodenav;
+        $nodenav->add(
+            get_string('settings_navigation_append', 'bbbext_simple'),
+            new moodle_url('/mod/bigbluebuttonbn/view.php', ['id' => $nodenav->key]),
+            \navigation_node::TYPE_SETTING,
+            null,
+            'bbbext_example_append'
+        );
+    }
+}
