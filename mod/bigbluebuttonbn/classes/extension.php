@@ -41,6 +41,17 @@ class extension {
     const BBB_EXTENSION_PLUGIN_NAME = 'bbbext';
 
     /**
+     * If true, all subplugins implementing the action_url_addons will be executed.
+     * If false, only the first one will be executed.
+     */
+    const BBB_EXTNSION_PROCESS_ALL = true;
+    /**
+     * If true, only the first subplugin implementing the action_url_addons will be executed.
+     * If false, all subplugins will be executed.
+     */
+    const BBB_EXTENSION_PROCESS_FIRST = false;
+
+    /**
      * Invoke a subplugin hook that will return additional parameters
      *
      * @param string $action
@@ -278,32 +289,41 @@ class extension {
     }
 
     /**
-     * Find and execute the first valid override callback for a given event, using the hook manager and plugin order.
+     * Find and execute valid hook callbacks for a given event, using the hook manager and plugin order.
      *
      * @param object $hookmanager The hook manager instance.
-     * @param object $overrideevent The event object (e.g., extend_settings_navigation_override).
-     * @return bool True if an override was found and executed, false otherwise.
+     * @param object $event The event object (e.g., extend_settings_navigation_override).
+     * @param bool $processall If true, process all extensions implementing the event hook, otherwise only the first one.
+     * @return bool True if at least one override was found and executed, false otherwise.
      */
-    public static function execute_first_override_callback($hookmanager, $overrideevent): bool {
-        $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($overrideevent));
-        $sortedflippedenabledsubplugins = self::get_sorted_flipped_enabled_subplugins();
-        $filteredcallbacks = array_filter($allcallbacks, function($callback) use ($sortedflippedenabledsubplugins) {
+    public static function execute_hook_callbacks($hookmanager, $event, $processall = self::BBB_EXTNSION_PROCESS_ALL): bool {
+        // Get all callbacks for the specific hook.
+        $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($event));
+        // Get the sorted and flipped list of enabled subplugins.
+        $subplugins = self::get_sorted_flipped_enabled_subplugins();
+        // Filter callbacks to only those that match enabled subplugins.
+        $filteredcallbacks = array_filter($allcallbacks, function($callback) use ($subplugins) {
             $subpluginname = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $callback['component']);
-            return isset($sortedflippedenabledsubplugins[$subpluginname]);
+            return isset($subplugins[$subpluginname]);
         });
-        usort($filteredcallbacks, function($a, $b) use ($sortedflippedenabledsubplugins) {
+        // Sort the filtered callbacks based on the subplugin order.
+        usort($filteredcallbacks, function($a, $b) use ($subplugins) {
             $a_sub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $a['component']);
             $b_sub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $b['component']);
-            return ($sortedflippedenabledsubplugins[$a_sub] ?? PHP_INT_MAX)
-                <=> ($sortedflippedenabledsubplugins[$b_sub] ?? PHP_INT_MAX);
+            return ($subplugins[$a_sub] ?? PHP_INT_MAX)
+                <=> ($subplugins[$b_sub] ?? PHP_INT_MAX);
         });
-        if (!empty($filteredcallbacks)) {
-            $firstcallback = $filteredcallbacks[0]['callback'];
-            if (is_callable($firstcallback)) {
-                call_user_func($firstcallback, $overrideevent);
-                return true;
+        $executed = false;
+        foreach ($filteredcallbacks as $cb) {
+            $callback = $cb['callback'];
+            if (is_callable($callback)) {
+                call_user_func($callback, $event);
+                $executed = true;
+                if (!$processall) {
+                    break;
+                }
             }
         }
-        return false;
+        return $executed;
     }
 }
