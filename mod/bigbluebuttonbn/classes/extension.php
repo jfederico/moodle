@@ -41,6 +41,17 @@ class extension {
     const BBB_EXTENSION_PLUGIN_NAME = 'bbbext';
 
     /**
+     * If true, all subplugins implementing the action_url_addons will be executed.
+     * If false, only the first one will be executed.
+     */
+    const BBB_EXTNSION_PROCESS_ALL = true;
+    /**
+     * If true, only the first subplugin implementing the action_url_addons will be executed.
+     * If false, all subplugins will be executed.
+     */
+    const BBB_EXTENSION_PROCESS_FIRST = false;
+
+    /**
      * Invoke a subplugin hook that will return additional parameters
      *
      * @param string $action
@@ -278,13 +289,14 @@ class extension {
     }
 
     /**
-     * Find and execute the first valid hook callback for a given event, using the hook manager and plugin order.
+     * Find and execute valid hook callbacks for a given event, using the hook manager and plugin order.
      *
      * @param object $hookmanager The hook manager instance.
      * @param object $event The event object (e.g., extend_settings_navigation_override).
-     * @return bool True if an override was found and executed, false otherwise.
+     * @param bool $processall If true, process all extensions implementing the event hook, otherwise only the first one.
+     * @return bool True if at least one override was found and executed, false otherwise.
      */
-    public static function execute_first_hook_callback($hookmanager, $event): bool {
+    public static function execute_hook_callbacks($hookmanager, $event, $processall = self::BBB_EXTNSION_PROCESS_ALL): bool {
         // Get all callbacks for the specific hook.
         $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($event));
         // Get the sorted and flipped list of enabled subplugins.
@@ -301,14 +313,17 @@ class extension {
             return ($subplugins[$a_sub] ?? PHP_INT_MAX)
                 <=> ($subplugins[$b_sub] ?? PHP_INT_MAX);
         });
-        // If there are any filtered callbacks, execute the first one.
-        if (!empty($filteredcallbacks)) {
-            $firstcallback = $filteredcallbacks[0]['callback'];
-            if (is_callable($firstcallback)) {
-                call_user_func($firstcallback, $event);
-                return true;
+        $executed = false;
+        foreach ($filteredcallbacks as $cb) {
+            $callback = $cb['callback'];
+            if (is_callable($callback)) {
+                call_user_func($callback, $event);
+                $executed = true;
+                if (!$processall) {
+                    break;
+                }
             }
         }
-        return false;
+        return $executed;
     }
 }

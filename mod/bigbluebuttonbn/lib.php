@@ -582,28 +582,24 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
 
     // 1. Check for overrides.
     $overrideevent = new extend_settings_navigation_override($settingsnav, $nodenav);
-    if (extension::execute_first_hook_callback($hookmanager, $overrideevent)) {
+    if (extension::execute_hook_callbacks($hookmanager, $overrideevent, extension::BBB_EXTENSION_PROCESS_FIRST)) {
         return; // Stop here – skip default logic and appends.
     }
 
     // 2. Run core/default logic here.
     global $USER;
-    // Don't add validate completion if the callback for meetingevents is NOT enabled.
-    if (!(boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
-        return;
-    }
-    // Don't add validate completion if user is not allowed to edit the activity.
     $context = context_module::instance($settingsnav->get_page()->cm->id);
-    if (!has_capability('moodle/course:manageactivities', $context, $USER->id)) {
-        return;
+    // Add validate completion if the callback for meetingevents is enabled and user is allowed to edit the activity.
+    if ((boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled') &&
+        has_capability('moodle/course:manageactivities', $context, $USER->id)) {
+        $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
+        $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
+            $completionvalidate, navigation_node::TYPE_CONTAINER);
     }
-    // Default navigation addition.
-    $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
-    $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
-        $completionvalidate, navigation_node::TYPE_CONTAINER);
 
     // 3. Call all appends.
-    $hookmanager->dispatch(new extend_settings_navigation_append($settingsnav, $nodenav));
+    $overrideevent = new extend_settings_navigation_append($settingsnav, $nodenav);
+    extension::execute_hook_callbacks($hookmanager, $overrideevent);
 }
 
 /**
