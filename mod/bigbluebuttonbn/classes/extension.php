@@ -89,39 +89,35 @@ class extension {
     }
 
     /**
-     * Get classes are named on the base of this classname and implementing this class
+     * Get classes in enabled subplugins that extend or implement the given class/interface.
+     * Tries both legacy (bigbluebuttonbn\) and modern (namespace after mod_bigbluebuttonbn\) locations.
+     * Uses get_sorted_flipped_enabled_subplugins for subplugin order.
      *
      * @param string $classname
      * @return array
      */
     protected static function get_classes_implementing(string $classname): array {
-        // Get the class basename without Reflection API.
         $classnamecomponents = explode("\\", $classname);
         $classbasename = end($classnamecomponents);
-        $allsubs = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
+        // Find the namespace after mod_bigbluebuttonbn (if any).
+        $modidx = array_search('mod_bigbluebuttonbn', $classnamecomponents);
+        $subnamespaces = $modidx !== false ? array_slice($classnamecomponents, $modidx + 1, -1) : [];
+        $subnamespace = $subnamespaces ? implode('\\', $subnamespaces) : '';
+        $sortedsubplugins = self::get_sorted_flipped_enabled_subplugins();
         $extensionclasses = [];
-        $names = core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME);
-        $sortedlist = self::get_sorted_plugins_list($names); // Make sure to use the most updated list.
-        $sortedlist = array_flip($sortedlist);
-        foreach ($allsubs as $sub) {
-            if (!$sub->is_enabled()) {
-                continue;
+        foreach ($sortedsubplugins as $subplugin => $sortorder) {
+            // Both legacy and modern locations are checked.
+            $legacyclass = "\\bbbext_{$subplugin}\\bigbluebuttonbn\\$classbasename";
+            $modernclass = $subnamespace ? "\\bbbext_{$subplugin}\\$subnamespace\\$classbasename" : null;
+            foreach ([$legacyclass, $modernclass] as $targetclassname) {
+                if (!$targetclassname || !class_exists($targetclassname, true)) {
+                    continue;
+                }
+                if (!is_subclass_of($targetclassname, $classname) && $targetclassname !== $classname) {
+                    continue;
+                }
+                $extensionclasses[$sortorder] = $targetclassname;
             }
-            $targetclassname = "\\bbbext_{$sub->name}\\bigbluebuttonbn\\$classbasename";
-            if (!class_exists($targetclassname)) {
-                continue;
-            }
-            if (!is_subclass_of($targetclassname, $classname)) {
-                debugging("The class $targetclassname should extend $classname in the subplugin {$sub->name}. Ignoring.");
-                continue;
-            }
-            if (!isset($sortedlist[$sub->name])) {
-                debugging("The class $targetclassname does not belong to an existing subplugin. Ignoring");
-                continue;
-            }
-            // Return all extension classes based on subplugin order on manage extension page.
-            $sortorder = $sortedlist[$sub->name];
-            $extensionclasses[$sortorder] = $targetclassname;
         }
         return $extensionclasses;
     }
@@ -145,6 +141,23 @@ class extension {
         }
         ksort($result);
         return $result;
+    }
+
+    /**
+     * Get sorted and flipped list of enabled subplugins for this extension type.
+     *
+     * @return array The flipped sorted list of enabled subplugin names (name => sortorder)
+     */
+    public static function get_sorted_flipped_enabled_subplugins(): array {
+        $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
+        $enabledsubpluginnames = array_keys(
+            array_filter($allsubplugins, fn($sub) => $sub->is_enabled())
+        );
+        $sortedsubplugins = array_flip(
+            self::get_sorted_plugins_list(core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME))
+        );
+        // Filter to only enabled subplugins, preserving order.
+        return array_intersect_key($sortedsubplugins, array_flip($enabledsubpluginnames));
     }
 
     /**
@@ -258,5 +271,24 @@ class extension {
      */
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
+    }
+
+    /**
+     * Get rendered output for override in the instance.
+     *
+     * @param \renderer_base $renderer
+     * @param instance $instance
+     * @return string|null Rendered information for the instance, or null if no override found.
+     */
+    public static function get_rendered_output_override($renderer, $instance): ?string {
+        $classes = self::get_classes_implementing(\mod_bigbluebuttonbn\output\view_page::class);
+        if (!empty($classes)) {
+            $outputclass = reset($classes);
+            if (class_exists($outputclass)) {
+                return $renderer->render(new $outputclass($instance));
+            }
+        }
+        // Fallback to the default rendered output if no subplugin overrides it.
+        return null;
     }
 }
