@@ -41,6 +41,17 @@ class extension {
     const BBB_EXTENSION_PLUGIN_NAME = 'bbbext';
 
     /**
+     * If true, all subplugins implementing the action_url_addons will be executed.
+     * If false, only the first one will be executed.
+     */
+    const BBB_EXTENSION_PROCESS_ALL = true;
+    /**
+     * If true, only the first subplugin implementing the action_url_addons will be executed.
+     * If false, all subplugins will be executed.
+     */
+    const BBB_EXTENSION_PROCESS_FIRST = false;
+
+    /**
      * Invoke a subplugin hook that will return additional parameters
      *
      * @param string $action
@@ -145,6 +156,23 @@ class extension {
         }
         ksort($result);
         return $result;
+    }
+
+    /**
+     * Get sorted and flipped list of enabled subplugins for this extension type.
+     *
+     * @return array The flipped sorted list of enabled subplugin names (name => sortorder)
+     */
+    public static function get_sorted_flipped_enabled_subplugins(): array {
+        $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
+        $enabledsubpluginnames = array_keys(
+            array_filter($allsubplugins, fn($sub) => $sub->is_enabled())
+        );
+        $sortedsubplugins = array_flip(
+            self::get_sorted_plugins_list(core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME))
+        );
+        // Filter to only enabled subplugins, preserving order.
+        return array_intersect_key($sortedsubplugins, array_flip($enabledsubpluginnames));
     }
 
     /**
@@ -258,5 +286,44 @@ class extension {
      */
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
+    }
+
+    /**
+     * Find and execute valid hook callbacks for a given event, using the hook manager and plugin order.
+     *
+     * @param object $hookmanager The hook manager instance.
+     * @param object $event The event object (e.g., extend_settings_navigation_override).
+     * @param bool $processall If true, process all extensions implementing the event hook, otherwise only the first one.
+     * @return bool True if at least one override was found and executed, false otherwise.
+     */
+    public static function execute_hook_callbacks($hookmanager, $event, $processall = self::BBB_EXTENSION_PROCESS_ALL): bool {
+        // Get all callbacks for the specific hook.
+        $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($event));
+        // Get the sorted and flipped list of enabled subplugins.
+        $subplugins = self::get_sorted_flipped_enabled_subplugins();
+        // Filter callbacks to only those that match enabled subplugins.
+        $filteredcallbacks = array_filter($allcallbacks, function ($callback) use ($subplugins) {
+            $subpluginname = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $callback['component']);
+            return isset($subplugins[$subpluginname]);
+        });
+        // Sort the filtered callbacks based on the subplugin order.
+        usort($filteredcallbacks, function ($a, $b) use ($subplugins) {
+            $asub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $a['component']);
+            $bsub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $b['component']);
+            return ($subplugins[$asub] ?? PHP_INT_MAX)
+                <=> ($subplugins[$bsub] ?? PHP_INT_MAX);
+        });
+        $executed = false;
+        foreach ($filteredcallbacks as $cb) {
+            $callback = $cb['callback'];
+            if (is_callable($callback)) {
+                call_user_func($callback, $event);
+                $executed = true;
+                if (!$processall) {
+                    break;
+                }
+            }
+        }
+        return $executed;
     }
 }
