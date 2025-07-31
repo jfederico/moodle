@@ -17,6 +17,7 @@
 namespace mod_bigbluebuttonbn\local\bigbluebutton\recordings;
 
 use mod_bigbluebuttonbn\instance;
+use mod_bigbluebuttonbn\logger;
 use mod_bigbluebuttonbn\recording;
 use mod_bigbluebuttonbn\local\config;
 
@@ -38,6 +39,11 @@ class recording_action {
      */
     public static function import(recording $recording, instance $targetinstance): void {
         $recording->create_imported_recording($targetinstance);
+        // Log the recording imported event.
+        logger::log_recording_imported_event(
+            $targetinstance,
+            $recording->get('id')
+        );
     }
 
     /**
@@ -54,6 +60,11 @@ class recording_action {
             $rec->delete();
         }
         $recording->delete();
+        // Log the recording deleted event.
+        logger::log_recording_deleted_event(
+            instance::get_from_instanceid($recording->get('bigbluebuttonbnid')),
+            $recording->get('id')
+        );
     }
 
     /**
@@ -63,6 +74,11 @@ class recording_action {
      */
     public static function edit(recording $recording): void {
         $recording->update();
+        // Log the recording edited event.
+        logger::log_recording_edited_event(
+            instance::get_from_instanceid($recording->get('bigbluebuttonbnid')),
+            $recording->get('id')
+        );
     }
 
     /**
@@ -81,6 +97,11 @@ class recording_action {
         }
         $recording->set('protected', false);
         $recording->update();
+        // Log the recording unprotected event.
+        logger::log_recording_unprotected_event(
+            instance::get_from_instanceid($recording->get('bigbluebuttonbnid')),
+            $recording->get('id')
+        );
     }
 
     /**
@@ -99,6 +120,11 @@ class recording_action {
         }
         $recording->set('protected', true);
         $recording->update();
+        // Log the recording protected event.
+        logger::log_recording_protected_event(
+            instance::get_from_instanceid($recording->get('bigbluebuttonbnid')),
+            $recording->get('id')
+        );
     }
 
     /**
@@ -115,6 +141,11 @@ class recording_action {
         }
         $recording->set('published', false);
         $recording->update();
+        // Log the recording unpublished event.
+        logger::log_recording_unpublished_event(
+            instance::get_from_instanceid($recording->get('bigbluebuttonbnid')),
+            $recording->get('id')
+        );
     }
 
     /**
@@ -131,5 +162,10 @@ class recording_action {
         }
         $recording->set('published', true);
         $recording->update();
+        // Log the recording published event.
+        logger::log_recording_published_event(
+            instance::get_from_instanceid($recording->get('bigbluebuttonbnid')),
+            $recording->get('id')
+        );
     }
 }
