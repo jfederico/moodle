@@ -53,7 +53,8 @@ class recording_action {
         foreach ($recordingstodelete as $rec) {
             $rec->delete();
         }
-        $recording->delete();
+        $recording->set('status', recording::RECORDING_STATUS_DELETED);
+        $recording->update();
     }
 
     /**
