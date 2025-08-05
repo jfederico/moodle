@@ -27,26 +27,41 @@ use navigation_node;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Jesus Federico (jesus [at] blindsidenetworks [dt] com)
  */
-class extend_settings_navigation_override {
+#[\core\attribute\label('Hook dispatched when we need to override the setting navigation menu.')]
+#[\core\attribute\tags('hook', 'settings_navigation', 'mod_bigbluebuttonbn')]
+class extend_settings_navigation_override implements \Psr\EventDispatcher\StoppableEventInterface {
     /**
-     * @var settings_navigation Settings navigation tree.
+     * @var bool Indicates whether the propagation of the event is stopped.
      */
-    public settings_navigation $settingsnav;
-
-    /**
-     * @var navigation_node Node in the settings navigation to be extended.
-     */
-    public navigation_node $nodenav;
+    protected bool $stopped = false;
 
     /**
      * Constructor for the hook.
      *
      * @param settings_navigation $settingsnav The settings navigation object.
-     * @param navigation_node $nodenav The node navigation object.
+     * @param navigation_node $nodenav The node navigation object to be overridden.
      * @return void
      */
-    public function __construct(settings_navigation $settingsnav, navigation_node $nodenav) {
-        $this->settingsnav = $settingsnav;
-        $this->nodenav = $nodenav;
+    public function __construct(
+        /** @var settings_navigation $settingsnav The settings navigation object. */
+        public settings_navigation $settingsnav,
+        /** @var navigation_node $nodenav The node navigation object. */
+        public navigation_node $nodenav
+    ) {
+    }
+
+
+    #[\Override]
+    public function isPropagationStopped(): bool {
+        return $this->stopped;
+    }
+
+    /**
+     * Stop the propagation of the event.
+     *
+     * @return void
+     */
+    public function stop(): void {
+        $this->stopped = true;
     }
 }
