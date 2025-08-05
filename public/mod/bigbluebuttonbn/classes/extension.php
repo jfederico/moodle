@@ -287,43 +287,4 @@ class extension {
     public static function broker_meeting_events_addons_instances(instance $instance, string $data): array {
         return self::get_instances_implementing(broker_meeting_events_addons::class, [$instance, $data]);
     }
-
-    /**
-     * Find and execute valid hook callbacks for a given event, using the hook manager and plugin order.
-     *
-     * @param object $hookmanager The hook manager instance.
-     * @param object $event The event object (e.g., extend_settings_navigation_override).
-     * @param bool $processall If true, process all extensions implementing the event hook, otherwise only the first one.
-     * @return bool True if at least one override was found and executed, false otherwise.
-     */
-    public static function execute_hook_callbacks($hookmanager, $event, $processall = self::BBB_EXTENSION_PROCESS_ALL): bool {
-        // Get all callbacks for the specific hook.
-        $allcallbacks = $hookmanager->get_callbacks_for_hook(get_class($event));
-        // Get the sorted and flipped list of enabled subplugins.
-        $subplugins = self::get_sorted_flipped_enabled_subplugins();
-        // Filter callbacks to only those that match enabled subplugins.
-        $filteredcallbacks = array_filter($allcallbacks, function ($callback) use ($subplugins) {
-            $subpluginname = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $callback['component']);
-            return isset($subplugins[$subpluginname]);
-        });
-        // Sort the filtered callbacks based on the subplugin order.
-        usort($filteredcallbacks, function ($a, $b) use ($subplugins) {
-            $asub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $a['component']);
-            $bsub = preg_replace('/^' . self::BBB_EXTENSION_PLUGIN_NAME . '_/', '', $b['component']);
-            return ($subplugins[$asub] ?? PHP_INT_MAX)
-                <=> ($subplugins[$bsub] ?? PHP_INT_MAX);
-        });
-        $executed = false;
-        foreach ($filteredcallbacks as $cb) {
-            $callback = $cb['callback'];
-            if (is_callable($callback)) {
-                call_user_func($callback, $event);
-                $executed = true;
-                if (!$processall) {
-                    break;
-                }
-            }
-        }
-        return $executed;
-    }
 }

@@ -577,13 +577,12 @@ function mod_bigbluebuttonbn_core_calendar_is_event_visible(calendar_event $even
  * @param navigation_node $nodenav The node to add module settings to
  */
 function bigbluebuttonbn_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $nodenav) {
-    // 0. Get the hook manager.
-    $hookmanager = \core\hook\manager::get_instance();
-
     // 1. Check for overrides.
-    $overrideevent = new extend_settings_navigation_override($settingsnav, $nodenav);
-    if (extension::execute_hook_callbacks($hookmanager, $overrideevent, extension::BBB_EXTENSION_PROCESS_FIRST)) {
-        return; // Stop here – skip default logic and appends.
+    $overridehook = new extend_settings_navigation_override($settingsnav, $nodenav);
+    $event = \core\di::get(\core\hook\manager::class)->dispatch($overridehook);
+    if ($event->isPropagationStopped()) {
+        // If the hook is overridden, we do not need to run the default logic.
+        return;
     }
 
     // 2. Run core/default logic here.
@@ -603,8 +602,8 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
     }
 
     // 3. Call all appends.
-    $overrideevent = new extend_settings_navigation_append($settingsnav, $nodenav);
-    extension::execute_hook_callbacks($hookmanager, $overrideevent);
+    $appendshook = new extend_settings_navigation_append($settingsnav, $nodenav);
+    \core\di::get(\core\hook\manager::class)->dispatch($appendshook);
 }
 
 /**
