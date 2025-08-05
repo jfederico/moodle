@@ -14,20 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace bbbext_simple;
+
+use mod_bigbluebuttonbn\hook\extend_settings_navigation_append;
+use moodle_url;
+
 /**
- * Hook callbacks for BigBlueButton Simple for extending Settings Navigation
+ * Class hook_listener for extend example.
  *
  * @package   mod_bigbluebuttonbn
  * @copyright 2025 Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$callbacks = [
-    [
-        'hook' => \mod_bigbluebuttonbn\hook\extend_settings_navigation_append::class,
-        'callback' => \bbbext_simple\hook_listener::class . '::append_settings_navigation',
-    ],
-];
+class hook_listener {
+    /**
+     * Appends settings navigation.
+     *
+     * @param extend_settings_navigation_append $event The event object containing navigation context.
+     * @return void
+     */
+    public static function append_settings_navigation(extend_settings_navigation_append $event): void {
+        $nodenav = $event->nodenav;
+        $nodenav->add(
+            get_string('settings_navigation_append', 'bbbext_simple'),
+            new moodle_url('/mod/bigbluebuttonbn/view.php', ['id' => $nodenav->key]),
+            \navigation_node::TYPE_SETTING,
+            null,
+            'bbbext_example_append'
+        );
+    }
+}

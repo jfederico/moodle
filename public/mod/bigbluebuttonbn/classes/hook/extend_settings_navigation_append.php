@@ -27,17 +27,9 @@ use navigation_node;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Jesus Federico (jesus [at] blindsidenetworks [dt] com)
  */
+#[\core\attribute\label('Hook dispatched when we need to append some content into the setting navigation menu.')]
+#[\core\attribute\tags('hook', 'settings_navigation', 'mod_bigbluebuttonbn')]
 class extend_settings_navigation_append {
-    /**
-     * @var settings_navigation Settings navigation tree.
-     */
-    public settings_navigation $settingsnav;
-
-    /**
-     * @var navigation_node Node in the settings navigation to be extended.
-     */
-    public navigation_node $nodenav;
-
     /**
      * Constructor for the hook.
      *
@@ -45,7 +37,12 @@ class extend_settings_navigation_append {
      * @param navigation_node $nodenav The node navigation object.
      * @return void
      */
-    public function __construct(settings_navigation $settingsnav, navigation_node $nodenav) {
+    public function __construct(
+        /** @var settings_navigation $settingsnav The settings navigation object. */
+        public settings_navigation $settingsnav,
+        /** @var navigation_node $nodenav The node navigation object to be extended. */
+        public navigation_node $nodenav
+    ) {
         $this->settingsnav = $settingsnav;
         $this->nodenav = $nodenav;
     }

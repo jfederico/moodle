@@ -27,6 +27,6 @@ defined('MOODLE_INTERNAL') || die();
 $callbacks = [
     [
         'hook' => \mod_bigbluebuttonbn\hook\extend_settings_navigation_override::class,
-        'callback' => \bbbext_complex\hook\extend_settings_navigation_override::class . '::override_settings_navigation',
+        'callback' => \bbbext_complex\hook_listener::class . '::override_settings_navigation',
     ],
 ];
