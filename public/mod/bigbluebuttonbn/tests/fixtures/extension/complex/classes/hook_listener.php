@@ -14,26 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace bbbext_complex\hook;
+namespace bbbext_complex;
 
 use moodle_url;
 
 /**
- * Class extend_settings_navigation_override example.
+ * Class hook_listener for override example.
  *
  * @package   mod_bigbluebuttonbn
  * @copyright 2025 Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
-class extend_settings_navigation_override {
+class hook_listener {
     /**
      * Overrides settings navigation.
      *
      * @param object $event The event object containing navigation context.
      * @return void
      */
-    public static function override_settings_navigation($event): void {
+    public static function override_settings_navigation(
+        \mod_bigbluebuttonbn\hook\extend_settings_navigation_override $event
+    ): void {
         $nodenav = $event->nodenav;
         $nodenav->add(
             get_string('settings_navigation_override', 'bbbext_complex'),
@@ -42,5 +44,6 @@ class extend_settings_navigation_override {
             null,
             'bbbext_example_override'
         );
+        $event->stop();
     }
 }

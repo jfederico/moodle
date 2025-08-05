@@ -28,6 +28,6 @@ defined('MOODLE_INTERNAL') || die();
 $callbacks = [
     [
         'hook' => \mod_bigbluebuttonbn\hook\extend_settings_navigation_append::class,
-        'callback' => \bbbext_simple\hook\extend_settings_navigation_append::class . '::append_settings_navigation',
+        'callback' => \bbbext_simple\hook_listener::class . '::append_settings_navigation',
     ],
 ];
