@@ -30,12 +30,23 @@ class extend_settings_navigation_override {
     /**
      * Overrides settings navigation.
      *
+     * Note: The check for whether the subplugin is enabled is necessary because
+     * Moodle's hook_manager will execute hooks for all discovered subplugins,
+     * regardless of their enabled/disabled state. Without this check, code in
+     * disabled subplugins would still run.
+     *
      * @param object $event The event object containing navigation context.
      * @return void
      */
     public static function override_settings_navigation(
         \mod_bigbluebuttonbn\hook\extend_settings_navigation_override $event
     ): void {
+        // Check if the bbbext_bnreports subplugin is enabled.
+        $pluginname = preg_replace('/^bbbext_/', '', explode('\\', __NAMESPACE__)[0]);
+        $allsubplugins = \core_plugin_manager::instance()->get_plugins_of_type('bbbext');
+        if (!isset($allsubplugins[$pluginname]) || !$allsubplugins[$pluginname]->is_enabled()) {
+            return;
+        }
         // Get the settings navigation and node navigation.
         $nodenav = $event->nodenav;
         $nodenav->add(
