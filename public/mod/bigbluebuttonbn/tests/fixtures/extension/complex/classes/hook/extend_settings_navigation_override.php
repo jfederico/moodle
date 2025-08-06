@@ -33,7 +33,10 @@ class extend_settings_navigation_override {
      * @param object $event The event object containing navigation context.
      * @return void
      */
-    public static function override_settings_navigation($event): void {
+    public static function override_settings_navigation(
+        \mod_bigbluebuttonbn\hook\extend_settings_navigation_override $event
+    ): void {
+        // Get the settings navigation and node navigation.
         $nodenav = $event->nodenav;
         $nodenav->add(
             get_string('settings_navigation_override', 'bbbext_complex'),
@@ -42,5 +45,6 @@ class extend_settings_navigation_override {
             null,
             'bbbext_example_override'
         );
+        $event->stop();
     }
 }
