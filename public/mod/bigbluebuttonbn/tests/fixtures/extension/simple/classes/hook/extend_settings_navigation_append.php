@@ -30,10 +30,12 @@ class extend_settings_navigation_append {
     /**
      * Appends settings navigation.
      *
-     * @param object $event The event object containing navigation context.
+     * @param \mod_bigbluebuttonbn\hook\extend_settings_navigation_append $event The event object containing navigation context.
      * @return void
      */
-    public static function append_settings_navigation($event): void {
+    public static function append_settings_navigation(
+        \mod_bigbluebuttonbn\hook\extend_settings_navigation_append $event
+    ): void {
         $nodenav = $event->nodenav;
         $nodenav->add(
             get_string('settings_navigation_append', 'bbbext_simple'),

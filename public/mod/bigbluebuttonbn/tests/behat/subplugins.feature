@@ -125,7 +125,6 @@ Feature: BigBlueButtonBN Subplugins test
   @javascript
   Scenario: I check that subplugins can append or override the navigation settings
     Given I log in as "admin"
-    And I navigate to "Plugins > Activity modules > BigBlueButton > Manage BigBlueButton extension plugins" in site administration
     And I am on the "BBB Instance name" "bigbluebuttonbn activity" page logged in as "admin"
     And I should see "Append Navigation"
     And I should not see "Override Navigation"
@@ -134,6 +133,7 @@ Feature: BigBlueButtonBN Subplugins test
   Scenario: I check that subplugins can append or override the navigation settings
     Given I log in as "admin"
     And I navigate to "Plugins > Activity modules > BigBlueButton > Manage BigBlueButton extension plugins" in site administration
+    And I click on "Enable" "link" in the "Complex" "table_row"
     And I am on the "BBB Instance name" "bigbluebuttonbn activity" page logged in as "admin"
     Then I should see "Override Navigation"
     And I should not see "Append Navigation"

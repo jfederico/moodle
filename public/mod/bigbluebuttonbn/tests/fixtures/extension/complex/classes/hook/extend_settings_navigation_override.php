@@ -30,10 +30,19 @@ class extend_settings_navigation_override {
     /**
      * Overrides settings navigation.
      *
-     * @param object $event The event object containing navigation context.
+     * @param \mod_bigbluebuttonbn\hook\extend_settings_navigation_override $event The event object containing navigation context.
      * @return void
      */
-    public static function override_settings_navigation($event): void {
+    public static function override_settings_navigation(
+        \mod_bigbluebuttonbn\hook\extend_settings_navigation_override $event
+    ): void {
+        // Always check if the subplugin is enabled, as hook_manager executes hooks for all subplugins, even if disabled.
+        $pluginname = preg_replace('/^bbbext_/', '', explode('\\', __NAMESPACE__)[0]);
+        $allsubplugins = \core_plugin_manager::instance()->get_plugins_of_type('bbbext');
+        if (!isset($allsubplugins[$pluginname]) || !$allsubplugins[$pluginname]->is_enabled()) {
+            return;
+        }
+        // Get the settings navigation and node navigation.
         $nodenav = $event->nodenav;
         $nodenav->add(
             get_string('settings_navigation_override', 'bbbext_complex'),
@@ -42,5 +51,6 @@ class extend_settings_navigation_override {
             null,
             'bbbext_example_override'
         );
+        $event->stop();
     }
 }
