@@ -589,8 +589,8 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
     $context = context_module::instance($settingsnav->get_page()->cm->id);
     // Add validate completion if the callback for meetingevents is enabled and user is allowed to edit the activity.
     if (
-        (bool) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')
-        && has_capability('moodle/course:manageactivities', $context, $USER->id)
+        (bool) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled') &&
+        has_capability('moodle/course:manageactivities', $context, $USER->id)
     ) {
         $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
         $nodenav->add(
