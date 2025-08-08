@@ -29,6 +29,8 @@ use core_calendar\action_factory;
 use core_calendar\local\event\entities\action_interface;
 use mod_bigbluebuttonbn\completion\custom_completion;
 use mod_bigbluebuttonbn\extension;
+use mod_bigbluebuttonbn\hook\extend_settings_navigation_append;
+use mod_bigbluebuttonbn\hook\extend_settings_navigation_override;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\bigbluebutton;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
@@ -574,12 +576,22 @@ function mod_bigbluebuttonbn_core_calendar_is_event_visible(calendar_event $even
  * @param navigation_node $nodenav The node to add module settings to
  */
 function bigbluebuttonbn_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $nodenav) {
+    // 0. Get the hook manager.
+    $hookmanager = \core\hook\manager::get_instance();
+
+    // 1. Check for overrides.
+    $overrideevent = new extend_settings_navigation_override($settingsnav, $nodenav);
+    if (extension::execute_hook_callbacks($hookmanager, $overrideevent, extension::BBB_EXTENSION_PROCESS_FIRST)) {
+        return; // Stop here – skip default logic and appends.
+    }
+
+    // 2. Run core/default logic here.
     global $USER;
     $context = context_module::instance($settingsnav->get_page()->cm->id);
     // Add validate completion if the callback for meetingevents is enabled and user is allowed to edit the activity.
     if (
-        (bool) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled') &&
-        has_capability('moodle/course:manageactivities', $context, $USER->id)
+        (bool) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')
+        && has_capability('moodle/course:manageactivities', $context, $USER->id)
     ) {
         $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $settingsnav->get_page()->cm->instance;
         $nodenav->add(
@@ -588,6 +600,10 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
             navigation_node::TYPE_CONTAINER
         );
     }
+
+    // 3. Call all appends.
+    $overrideevent = new extend_settings_navigation_append($settingsnav, $nodenav);
+    extension::execute_hook_callbacks($hookmanager, $overrideevent);
 }
 
 /**
