@@ -185,8 +185,15 @@ final class manager implements
                 continue;
             }
             $callback = $definition['callback'];
+            $component = $definition['component'];
 
-            if ($this->is_callback_valid($definition['component'], $callback)) {
+            // Only yield if the component is enabled (for plugins).
+            $plugininfo = \core_plugin_manager::instance()->get_plugin_info($component);
+            if ($plugininfo && !$plugininfo->is_enabled()) {
+                continue;
+            }
+
+            if ($this->is_callback_valid($component, $callback)) {
                 yield $callback;
             }
         }
