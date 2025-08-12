@@ -82,10 +82,12 @@ class extension {
     public static function get_instances_implementing(string $classname, ?array $newparameters = []): array {
         $classes = self::get_classes_implementing($classname);
         ksort($classes); // Make sure all extension classes are returned in the correct order.
-        return array_map(function($targetclassname) use ($newparameters) {
-            // If $newparameters is null, the constructor will be called without parameters.
-            return new $targetclassname(...$newparameters);
-        }, $classes);
+        $instances = array_map(function($targetclassname) use ($newparameters) {
+                // If $newparameters is null, the constructor will be called without parameters.
+                return new $targetclassname(...$newparameters);
+            }, $classes);
+        // Reindex to ensure zero-based numeric keys for safe [0] access patterns.
+        return array_values($instances);
     }
 
     /**

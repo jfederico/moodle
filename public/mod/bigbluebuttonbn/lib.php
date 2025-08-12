@@ -575,7 +575,7 @@ function mod_bigbluebuttonbn_core_calendar_is_event_visible(calendar_event $even
  */
 function bigbluebuttonbn_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $nodenav) {
     // 1. Check for overrides.
-    $overrides = self::get_instances_implementing(\mod_bigbluebuttonbn\local\extension\navigation_override_addon::class);
+    $overrides = extension::get_instances_implementing(\mod_bigbluebuttonbn\local\extension\navigation_override_addon::class);
     if (!empty($overrides) && $overrides[0] !== null) {
         // Call the first override and return.
         $overrides[0]->override_settings_navigation($settingsnav, $nodenav);
@@ -599,7 +599,7 @@ function bigbluebuttonbn_extend_settings_navigation(settings_navigation $setting
     }
 
     // 3. Call all appends.
-    $appends = \mod_bigbluebuttonbn\extension::get_instances_implementing(\mod_bigbluebuttonbn\local\extension\navigation_append_addon::class);
+    $appends = extension::get_instances_implementing(\mod_bigbluebuttonbn\local\extension\navigation_append_addon::class);
     foreach ($appends as $addon) {
         $addon->append_settings_navigation($settingsnav, $nodenav);
     }
