@@ -79,7 +79,7 @@ class extension {
      * @param array|null $newparameters additional parameters for the constructor.
      * @return array
      */
-    protected static function get_instances_implementing(string $classname, ?array $newparameters = []): array {
+    public static function get_instances_implementing(string $classname, ?array $newparameters = []): array {
         $classes = self::get_classes_implementing($classname);
         ksort($classes); // Make sure all extension classes are returned in the correct order.
         return array_map(function($targetclassname) use ($newparameters) {
