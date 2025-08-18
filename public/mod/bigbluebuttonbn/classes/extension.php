@@ -91,7 +91,6 @@ class extension {
     /**
      * Get classes in enabled subplugins that extend or implement the given class/interface.
      * Tries both legacy (bigbluebuttonbn\) and modern (namespace after mod_bigbluebuttonbn\) locations.
-     * Uses get_sorted_flipped_enabled_subplugins for subplugin order.
      *
      * @param string $classname
      * @return array
@@ -99,15 +98,25 @@ class extension {
     protected static function get_classes_implementing(string $classname): array {
         $classnamecomponents = explode("\\", $classname);
         $classbasename = end($classnamecomponents);
-        // Find the namespace after mod_bigbluebuttonbn (if any).
+        // Detect subnamespace (portion after mod_bigbluebuttonbn) to support modern layout as well as legacy.
         $modidx = array_search('mod_bigbluebuttonbn', $classnamecomponents);
         $subnamespaces = $modidx !== false ? array_slice($classnamecomponents, $modidx + 1, -1) : [];
         $subnamespace = $subnamespaces ? implode('\\', $subnamespaces) : '';
-        $sortedsubplugins = self::get_sorted_flipped_enabled_subplugins();
+
+        // Inline enabled + sorted subplugin resolution.
+        $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
+        $enabledsubpluginnames = array_keys(array_filter($allsubplugins, fn($sub) => $sub->is_enabled()));
+        $sortedsubplugins = array_flip(
+            self::get_sorted_plugins_list(core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME))
+        ); // name => sortorder
+        // Restrict to enabled ones preserving order.
+        $orderedenabled = array_intersect_key($sortedsubplugins, array_flip($enabledsubpluginnames));
+
         $extensionclasses = [];
-        foreach ($sortedsubplugins as $subplugin => $sortorder) {
-            // Both legacy and modern locations are checked.
+        foreach ($orderedenabled as $subplugin => $sortorder) {
+            // Legacy location.
             $legacyclass = "\\bbbext_{$subplugin}\\bigbluebuttonbn\\$classbasename";
+            // Modern namespaced location.
             $modernclass = $subnamespace ? "\\bbbext_{$subplugin}\\$subnamespace\\$classbasename" : null;
             foreach ([$legacyclass, $modernclass] as $targetclassname) {
                 if (!$targetclassname || !class_exists($targetclassname, true)) {
@@ -141,23 +150,6 @@ class extension {
         }
         ksort($result);
         return $result;
-    }
-
-    /**
-     * Get sorted and flipped list of enabled subplugins for this extension type.
-     *
-     * @return array The flipped sorted list of enabled subplugin names (name => sortorder)
-     */
-    public static function get_sorted_flipped_enabled_subplugins(): array {
-        $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
-        $enabledsubpluginnames = array_keys(
-            array_filter($allsubplugins, fn($sub) => $sub->is_enabled())
-        );
-        $sortedsubplugins = array_flip(
-            self::get_sorted_plugins_list(core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME))
-        );
-        // Filter to only enabled subplugins, preserving order.
-        return array_intersect_key($sortedsubplugins, array_flip($enabledsubpluginnames));
     }
 
     /**
