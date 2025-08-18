@@ -52,15 +52,15 @@ class view_page implements renderable, templatable {
     /**
      * Export the content required to render the template.
      *
-     * @param renderer_base $renderer
+     * @param renderer_base $output
      * @return stdClass
      */
-    public function export_for_template($renderer): \stdClass {
+    public function export_for_template(\renderer_base $output): \stdClass {
         // Only use group selector if the renderer supports it, otherwise leave empty.
         $groupselector = '';
         // Use the correct renderer for plugin-specific methods.
-        if ($renderer instanceof \mod_bigbluebuttonbn\output\renderer) {
-            $groupselector = $renderer->render_groups_selector($this->instance);
+        if ($output instanceof \mod_bigbluebuttonbn\output\renderer) {
+            $groupselector = $output->render_groups_selector($this->instance);
         } else {
             // Fallback: get the plugin renderer from $PAGE if available.
             global $PAGE;
@@ -116,17 +116,17 @@ class view_page implements renderable, templatable {
                     $result->get_summary()),
                 notification::NOTIFY_ERROR,
                 false
-            ))->export_for_template($renderer);
+            ))->export_for_template($output);
         }
         if ($this->instance->is_feature_enabled('showrecordings') && $this->instance->is_recorded()) {
             $recordings = new recordings_session($this->instance);
-            $templatedata->recordings = $recordings->export_for_template($renderer);
+            $templatedata->recordings = $recordings->export_for_template($output);
         } else if ($this->instance->is_type_recordings_only()) {
             $templatedata->recordingwarnings[] = (new notification(
                 get_string('view_message_recordings_disabled', 'mod_bigbluebuttonbn'),
                 notification::NOTIFY_WARNING,
                 false
-            ))->export_for_template($renderer);
+            ))->export_for_template($output);
         }
 
         return $templatedata;
@@ -137,7 +137,7 @@ class view_page implements renderable, templatable {
      *
      * @return bool
      */
-    private function show_view_warning(): bool {
+    protected function show_view_warning(): bool {
         if ($this->instance->is_admin()) {
             return true;
         }
