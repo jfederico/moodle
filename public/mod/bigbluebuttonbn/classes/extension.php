@@ -22,6 +22,7 @@ use mod_bigbluebuttonbn\local\extension\broker_meeting_events_addons;
 use mod_bigbluebuttonbn\local\extension\custom_completion_addons;
 use mod_bigbluebuttonbn\local\extension\mod_form_addons;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
+use mod_bigbluebuttonbn\local\extension\view_page_addons;
 use stdClass;
 use core_plugin_manager;
 use core_component;
@@ -122,49 +123,6 @@ class extension {
             // Return all extension classes based on subplugin order on manage extension page.
             $sortorder = $sortedlist[$sub->name];
             $extensionclasses[$sortorder] = $targetclassname;
-        }
-        return $extensionclasses;
-    }
-
-    /**
-     * Get classes in enabled subplugins that extend or implement the given class/interface.
-     * Tries both legacy (bigbluebuttonbn\) and modern (namespace after mod_bigbluebuttonbn\) locations.
-     *
-     * @param string $classname
-     * @return array
-     */
-    protected static function extended_get_classes_implementing(string $classname): array {
-        $classnamecomponents = explode("\\", $classname);
-        $classbasename = end($classnamecomponents);
-        // Detect subnamespace (portion after mod_bigbluebuttonbn) to support modern layout as well as legacy.
-        $modidx = array_search('mod_bigbluebuttonbn', $classnamecomponents);
-        $subnamespaces = $modidx !== false ? array_slice($classnamecomponents, $modidx + 1, -1) : [];
-        $subnamespace = $subnamespaces ? implode('\\', $subnamespaces) : '';
-
-        // Inline enabled + sorted subplugin resolution.
-        $allsubplugins = core_plugin_manager::instance()->get_plugins_of_type(self::BBB_EXTENSION_PLUGIN_NAME);
-        $enabledsubpluginnames = array_keys(array_filter($allsubplugins, fn($sub) => $sub->is_enabled()));
-        $sortedsubplugins = array_flip(
-            self::get_sorted_plugins_list(core_component::get_plugin_list(self::BBB_EXTENSION_PLUGIN_NAME))
-        ); // name => sortorder
-        // Restrict to enabled ones preserving order.
-        $orderedenabled = array_intersect_key($sortedsubplugins, array_flip($enabledsubpluginnames));
-
-        $extensionclasses = [];
-        foreach ($orderedenabled as $subplugin => $sortorder) {
-            // Legacy location.
-            $legacyclass = "\\bbbext_{$subplugin}\\bigbluebuttonbn\\$classbasename";
-            // Modern namespaced location.
-            $modernclass = $subnamespace ? "\\bbbext_{$subplugin}\\$subnamespace\\$classbasename" : null;
-            foreach ([$legacyclass, $modernclass] as $targetclassname) {
-                if (!$targetclassname || !class_exists($targetclassname, true)) {
-                    continue;
-                }
-                if (!is_subclass_of($targetclassname, $classname) && $targetclassname !== $classname) {
-                    continue;
-                }
-                $extensionclasses[$sortorder] = $targetclassname;
-            }
         }
         return $extensionclasses;
     }
@@ -311,7 +269,7 @@ class extension {
      * @return string|null Rendered information for the instance, or null if no override found.
      */
     public static function get_rendered_output_override($renderer, $instance): ?string {
-        $classes = self::extended_get_classes_implementing(\mod_bigbluebuttonbn\output\view_page::class);
+        $classes = self::get_classes_implementing(view_page_addons::class);
         if (!empty($classes)) {
             $outputclass = reset($classes);
             if (class_exists($outputclass)) {
