@@ -55,17 +55,14 @@ class view_page implements renderable, templatable {
      * @param renderer_base $output
      * @return stdClass
      */
-    public function export_for_template(\renderer_base $output): \stdClass {
-        // Only use group selector if the renderer supports it, otherwise leave empty.
-        $groupselector = '';
-        // Use the correct renderer for plugin-specific methods.
-        if ($output instanceof \mod_bigbluebuttonbn\output\renderer) {
+    public function export_for_template(renderer_base $output): \stdClass {
+        // By default use group selector from the plugin renderer.
+        global $PAGE;
+        $pluginrenderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
+        $groupselector = $pluginrenderer->render_groups_selector($this->instance);
+        if (method_exists($output, 'render_groups_selector')) {
+            // If the output renderer supports the method, override it.
             $groupselector = $output->render_groups_selector($this->instance);
-        } else {
-            // Fallback: get the plugin renderer from $PAGE if available.
-            global $PAGE;
-            $pluginrenderer = $PAGE->get_renderer('mod_bigbluebuttonbn');
-            $groupselector = $pluginrenderer->render_groups_selector($this->instance);
         }
         $pollinterval = bigbluebutton_proxy::get_poll_interval();
         $templatedata = (object) [
@@ -156,5 +153,4 @@ class view_page implements renderable, templatable {
 
         return false;
     }
-
 }

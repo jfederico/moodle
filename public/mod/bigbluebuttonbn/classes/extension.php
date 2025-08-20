@@ -22,6 +22,7 @@ use mod_bigbluebuttonbn\local\extension\broker_meeting_events_addons;
 use mod_bigbluebuttonbn\local\extension\custom_completion_addons;
 use mod_bigbluebuttonbn\local\extension\mod_form_addons;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
+use mod_bigbluebuttonbn\local\extension\view_page_addons;
 use stdClass;
 use core_plugin_manager;
 use core_component;
@@ -268,7 +269,7 @@ class extension {
      * @return string|null Rendered information for the instance, or null if no override found.
      */
     public static function get_rendered_output_override($renderer, $instance): ?string {
-        $classes = self::get_classes_implementing(\mod_bigbluebuttonbn\output\view_page::class);
+        $classes = self::get_classes_implementing(view_page_addons::class);
         if (!empty($classes)) {
             $outputclass = reset($classes);
             if (class_exists($outputclass)) {
