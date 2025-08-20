@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace bbbext_complex\output;
+namespace bbbext_complex\bigbluebuttonbn;
 
 use stdClass;
 use mod_bigbluebuttonbn\instance;
-use mod_bigbluebuttonbn\output\view_page as base_view_page;
 
 /**
  * View Page template renderable.
@@ -28,7 +27,7 @@ use mod_bigbluebuttonbn\output\view_page as base_view_page;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
-class view_page extends base_view_page {
+class view_page_addons extends \mod_bigbluebuttonbn\local\extension\view_page_addons {
     /** @var instance The instance being rendered */
     protected $instance;
 
