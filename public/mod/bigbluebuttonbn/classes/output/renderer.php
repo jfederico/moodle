@@ -21,6 +21,7 @@ use core\output\inplace_editable;
 use html_table;
 use html_writer;
 use mod_bigbluebuttonbn\instance;
+use mod_bigbluebuttonbn\local\helpers\groups as groups_helper;
 use plugin_renderer_base;
 
 /**
@@ -51,38 +52,8 @@ class renderer extends plugin_renderer_base {
      * @param instance $instance
      * @return string
      */
-    public function render_groups_selector(instance $instance): string {
-        $groupmode = groups_get_activity_groupmode($instance->get_cm());
-        if ($groupmode == NOGROUPS) {
-            return '';
-        }
-
-        // Separate or visible group mode.
-        $groups = groups_get_activity_allowed_groups($instance->get_cm());
-        if (empty($groups)) {
-            // No groups in this course.
-            notification::add(get_string('view_groups_nogroups_warning', 'bigbluebuttonbn'), notification::INFO);
-            return '';
-        }
-
-        // Assign group default values.
-        if (count($groups) == 0) {
-            // Only the All participants group exists.
-            notification::add(get_string('view_groups_notenrolled_warning', 'bigbluebuttonbn'), notification::INFO);
-            return '';
-        }
-
-        if (count($groups) > 1) {
-            notification::add(get_string('view_groups_selection_warning', 'bigbluebuttonbn'), notification::INFO);
-        }
-
-        $groupsmenu = groups_print_activity_menu(
-            $instance->get_cm(),
-            $instance->get_view_url(),
-            true
-        );
-
-        return $groupsmenu . '<br><br>';
+    public function render_groups_selector(instance $instance): string { // Backwards compatible wrapper.
+        return groups_helper::render_selector($instance);
     }
 
     /**
