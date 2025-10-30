@@ -26,7 +26,6 @@
 namespace mod_bigbluebuttonbn\test;
 
 use core_component;
-use core_h5p\core;
 use core_plugin_manager;
 use mod_bigbluebuttonbn\extension;
 use ReflectionClass;
@@ -50,7 +49,9 @@ trait subplugins_test_helper_trait {
 
         $mockedplugins = $mockedcomponent->getProperty('plugins');
         $plugins = $mockedplugins->getValue();
-        $plugins[extension::BBB_EXTENSION_PLUGIN_NAME][$pluginname] = $bbbextpath . "/$pluginname";
+        $existingplugins = $plugins[extension::BBB_EXTENSION_PLUGIN_NAME] ?? [];
+        $plugins[extension::BBB_EXTENSION_PLUGIN_NAME] =
+            [$pluginname => $bbbextpath . "/$pluginname"] + $existingplugins;
         $mockedplugins->setValue(null, $plugins);
 
         $mockedplugintypes = $mockedcomponent->getProperty('plugintypes');
@@ -66,7 +67,10 @@ trait subplugins_test_helper_trait {
 
         $mockedsubplugins = $mockedcomponent->getProperty('subplugins');
         $subplugins = $mockedsubplugins->getValue();
-        $subplugins['mod_bigbluebuttonbn'][extension::BBB_EXTENSION_PLUGIN_NAME][] = $pluginname;
+        $existingorder = $subplugins['mod_bigbluebuttonbn'][extension::BBB_EXTENSION_PLUGIN_NAME] ?? [];
+        $existingorder = array_values(array_diff($existingorder, [$pluginname]));
+        array_unshift($existingorder, $pluginname);
+        $subplugins['mod_bigbluebuttonbn'][extension::BBB_EXTENSION_PLUGIN_NAME] = $existingorder;
         $mockedsubplugins->setValue(null, $subplugins);
 
         // Now write the content of the cache in a file so we can use it later.
@@ -81,7 +85,6 @@ trait subplugins_test_helper_trait {
 
         // Cache has been cleared so let's write it again.
         self::write_fake_component_cache($content);
-
     }
 
     /**
@@ -118,8 +121,8 @@ trait subplugins_test_helper_trait {
         }
         @unlink($cachefile . '.tmp'); // Just in case anything fails (race condition).
         core_component::invalidate_opcode_php_cache($cachefile);
-
     }
+
     /**
      * Uninstall a fake extension plugin
      *
