@@ -180,9 +180,11 @@ $string['config_recordings_asc_sort'] = 'List recordings in chronological order'
 $string['config_recordings_asc_sort_description'] = 'Recordings are ordered by date, either chronological or reverse chronological order (most recent recording first).';
 
 $string['config_recording_safe_formats'] = 'Recording formats viewable by everyone';
-$string['config_recording_safe_formats_description'] = 'Select the formats which are viewable by everyone.
-All other formats are only viewable by teachers and other users with the mod/bigbluebuttonbn:viewallrecordingformats and
- mod/bigbluebuttonbn:managerecordings capabilities.';
+$string['config_recording_safe_formats_description'] = 'Type a format name and press Enter to add it to the list. '
+	. 'All other formats are only viewable by teachers and other users with the mod/bigbluebuttonbn:viewallrecordingformats '
+	. 'and mod/bigbluebuttonbn:managerecordings capabilities.';
+$string['config_recording_safe_formats_placeholder'] = 'Type a format name and press Enter';
+$string['config_recording_safe_formats_noselection'] = 'No formats selected';
 
 $string['config_importrecordings'] = 'Import recordings';
 $string['config_importrecordings_description'] = 'These settings are feature specific.';
