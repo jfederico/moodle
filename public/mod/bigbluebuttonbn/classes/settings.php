@@ -30,6 +30,7 @@ use admin_settingpage;
 use cache_helper;
 use core_plugin_manager;
 use lang_string;
+use mod_bigbluebuttonbn\local\admin\setting_recording_safe_formats;
 use mod_bigbluebuttonbn\local\config;
 use mod_bigbluebuttonbn\local\helpers\roles;
 use mod_bigbluebuttonbn\local\plugins\admin_page_manage_extensions;
@@ -390,7 +391,21 @@ class settings {
                 'statistics' => get_string('view_recording_format_statistics', 'mod_bigbluebuttonbn'),
                 'video' => get_string('view_recording_format_video', 'mod_bigbluebuttonbn'),
             ];
-            $item = new admin_setting_configmultiselect(
+
+            if ($configuredformats = get_config('mod_bigbluebuttonbn', 'recording_safe_formats')) {
+                $normalisedformats = str_replace(["\r\n", "\r", "\n"], ',', $configuredformats);
+                $configuredvalues = array_map('trim', explode(',', $normalisedformats));
+                foreach ($configuredvalues as $value) {
+                    if ($value === '') {
+                        continue;
+                    }
+                    if (!array_key_exists($value, $recordingsafeformat)) {
+                        $recordingsafeformat[$value] = $value;
+                    }
+                }
+            }
+
+            $item = new setting_recording_safe_formats(
                 'bigbluebuttonbn_recording_safe_formats',
                 get_string('config_recording_safe_formats', 'mod_bigbluebuttonbn'),
                 get_string('config_recording_safe_formats_description', 'mod_bigbluebuttonbn'),
@@ -398,10 +413,21 @@ class settings {
                 $recordingsafeformat
             );
             $this->add_conditional_element(
-                'recording_hide_button_editable',
+                'recording_safe_formats',
                 $item,
                 $recordingsetting
             );
+
+            if ($this->admin->fulltree) {
+                global $PAGE;
+                if (isset($PAGE)) {
+                    $PAGE->requires->js_call_amd(
+                        'mod_bigbluebuttonbn/recording_formats_autocomplete',
+                        'init',
+                        ['#' . $item->get_id()]
+                    );
+                }
+            }
         }
         $this->admin->add($this->parent, $recordingsetting);
     }
