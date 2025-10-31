@@ -155,8 +155,16 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
         global $PAGE;
 
         $html = parent::output_html($data, $query);
-        if ($html === '' || $this->is_readonly()) {
+        if ($html === '') {
             return $html;
+        }
+
+        if ($this->is_readonly()) {
+            return $html;
+        }
+
+        if (strpos($html, 'data-bbb-tags-select="1"') === false) {
+            $html = preg_replace('/<select\b/', '<select data-bbb-tags-select="1"', $html, 1);
         }
 
         $params = [
@@ -168,7 +176,7 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
             $this->showsuggestions,
             $this->noselectionstring,
         ];
-        $PAGE->requires->js_call_amd('core/form-autocomplete', 'enhance', $params);
+        $PAGE->requires->js_call_amd('mod_bigbluebuttonbn/setting_configmultiselect_tags', 'init', $params);
 
         return $html;
     }
