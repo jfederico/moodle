@@ -17,8 +17,9 @@
  * Helper that hides the fallback select and delegates to the autocomplete enhancer.
  *
  * @module     mod_bigbluebuttonbn/setting_configmultiselect_tags
- * @copyright  2024
+ * @copyright  2025 Blindside Networks Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 define(['jquery', 'core/form-autocomplete'], function($, autocomplete) {
     /**

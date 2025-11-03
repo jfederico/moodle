@@ -24,8 +24,9 @@ defined('MOODLE_INTERNAL') || die();
  * Multiselect admin setting that allows typing arbitrary values via the autocomplete widget.
  *
  * @package   mod_bigbluebuttonbn
- * @copyright 2024
+ * @copyright 2025 Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class setting_configmultiselect_tags extends admin_setting_configmultiselect {
     /** @var string Placeholder shown in the enhanced select. */
