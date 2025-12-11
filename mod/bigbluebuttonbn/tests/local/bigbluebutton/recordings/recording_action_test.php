@@ -34,27 +34,106 @@ final class recording_action_test extends \advanced_testcase {
      *
      * @covers \mod_bigbluebuttonbn\local\bigbluebuttonbn\recordings\recording_action::delete
      */
-    public function test_delete_sets_status_deleted(): void {
+    public function test_delete_recording(): void {
         global $DB;
+
         $this->resetAfterTest();
 
-        // Create a dummy course and instance, as required by the module generator.
+        // Create the course and BigBlueButton activity the recording belongs to.
         $course = $this->getDataGenerator()->create_course();
-        $instance = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $instance = $this->getDataGenerator()->create_module('bigbluebuttonbn', [
+            'course' => $course->id,
+            'trackactivity' => [],
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+
+        // Insert a recording row with the required schema fields populated.
+        $now = time();
         $recordingdata = [
             'bigbluebuttonbnid' => $instance->id,
             'recordingid' => 'testrecid',
-            'status' => 0, // Default status, adjust as needed for your schema.
-            'imported' => false,
             'courseid' => $course->id,
-            'groupid' => 0, // Add required field for persistent.
+            'groupid' => 0,
+            'headless' => 0,
+            'imported' => false,
+            'status' => recording::RECORDING_STATUS_PROCESSED,
+            'importeddata' => null,
+            'timecreated' => $now,
+            'timemodified' => $now,
+            'usermodified' => $user->id,
         ];
         $recordingid = $DB->insert_record('bigbluebuttonbn_recordings', $recordingdata);
         $recording = new recording($recordingid);
 
         // Call delete and verify status change.
         recording_action::delete($recording);
+
+        // Verify the recording status is set to deleted.
         $updated = $DB->get_record('bigbluebuttonbn_recordings', ['id' => $recordingid]);
         $this->assertEquals(recording::RECORDING_STATUS_DELETED, $updated->status);
+    }
+
+    /**
+     * Test that deleting an imported recording removes it from the database entirely.
+     *
+     * Imported recordings act as symbolic links stored only in Moodle so their record must be purged on delete.
+     *
+     * @covers \mod_bigbluebuttonbn\local\bigbluebuttonbn\recordings\recording_action::delete
+     */
+    public function test_delete_imported_recording(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        // Create the course and BigBlueButton activity the imported recording belongs to.
+        $course = $this->getDataGenerator()->create_course();
+        $instance = $this->getDataGenerator()->create_module('bigbluebuttonbn', [
+            'course' => $course->id,
+            'trackactivity' => [],
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+
+        // Insert an imported recording row with the required schema fields populated.
+        $now = time();
+        $metadata = [
+            'recordID' => 'imported-rec-001',
+            'meetingID' => 'sample-meeting-001',
+            'meetingName' => 'Sample Meeting',
+            'published' => 'true',
+            'state' => 'published',
+            'startTime' => '1744396087329',
+            'endTime' => '1744396105898',
+            'playbacks' => [
+                'presentation' => [
+                    'type' => 'presentation',
+                    'url' => 'https://example.org/playback/presentation/sample',
+                    'length' => '0',
+                ],
+            ],
+        ];
+        $recordingdata = [
+            'bigbluebuttonbnid' => $instance->id,
+            'courseid' => $course->id,
+            'groupid' => 0,
+            'recordingid' => 'imported-rec-001',
+            'headless' => 0,
+            'imported' => true,
+            'status' => recording::RECORDING_STATUS_PROCESSED,
+            'importeddata' => json_encode($metadata, JSON_UNESCAPED_SLASHES),
+            'timecreated' => $now,
+            'timemodified' => $now,
+            'usermodified' => $user->id,
+        ];
+        $recordingid = $DB->insert_record('bigbluebuttonbn_recordings', $recordingdata);
+        $recording = new recording($recordingid);
+
+        // Call delete and verify full removal.
+        recording_action::delete($recording);
+
+        // Verify the imported recording is fully removed.
+        $this->assertFalse(
+            $DB->record_exists('bigbluebuttonbn_recordings', ['id' => $recordingid]),
+            'Imported recordings should be fully removed once deleted.'
+        );
     }
 }
