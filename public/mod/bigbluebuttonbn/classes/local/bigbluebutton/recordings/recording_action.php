@@ -43,6 +43,9 @@ class recording_action {
     /**
      * Helper for performing delete on recordings.
      *
+     * The recordings are not removed from the database but marked as deleted. However, full deletion may occur
+     * under particular circumstances such as when resetting the course.
+     *
      * @param recording $recording
      */
     public static function delete(recording $recording): void {
@@ -53,6 +56,7 @@ class recording_action {
         foreach ($recordingstodelete as $rec) {
             $rec->delete();
         }
+        // Step 2, mark real recording as deleted.
         $recording->set('status', recording::RECORDING_STATUS_DELETED);
         $recording->update();
     }
