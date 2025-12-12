@@ -44,21 +44,12 @@ class reset {
      * This will delete recordings in the database and not in the remote BBB server.
      *
      * @param int $courseid
+     * @return bool status
      */
-    public static function reset_recordings(int $courseid): void {
-        // Criteria for search : courseid or bigbluebuttonbn=null or subset=false or includedeleted=true.
-        $recordings = recording::get_recordings_for_course(
-            $courseid,
-            [], // Exclude itself.
-            false,
-            true
-        );
-        if ($recordings) {
-            // Remove all the recordings.
-            foreach ($recordings as $recording) {
-                $recording->delete();
-            }
-        }
+    public static function reset_recordings(int $courseid) {
+        global $DB;
+        // Remove all the recordings locally (they remain on the remote BBB server).
+        return $DB->delete_records('bigbluebuttonbn_recordings', ['courseid' => $courseid]);
     }
 
     /**
