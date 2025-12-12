@@ -297,7 +297,7 @@ function bigbluebuttonbn_reset_course_form_definition(&$mform) {
             "reset_bigbluebuttonbn_{$item}",
             get_string("reset{$item}", 'bigbluebuttonbn')
         );
-        if ($item == 'logs' || $item == 'recordings') {
+        if ($item == 'recordings') {
             $mform->addHelpButton("reset_bigbluebuttonbn_{$item}", "reset{$item}", 'bigbluebuttonbn');
         }
     }
