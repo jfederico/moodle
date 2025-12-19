@@ -13,6 +13,7 @@ Feature: Test the ability to run the full meeting lifecycle (start to end) for g
       | username | firstname | lastname | email                 |
       | traverst | Terry     | Travers  | t.travers@example.com |
       | teacher  | Teacher   | Teacher  | t.eacher@example.com  |
+      | uraverst | Uerry     | Uravers  | u.uravers@example.com |
     And the following "course enrolments" exist:
       | user     | course | role           |
       | traverst | C1     | student        |
@@ -49,5 +50,21 @@ Feature: Test the ability to run the full meeting lifecycle (start to end) for g
     And I set the field "username" to "Test Guest User"
     And I click on "Join meeting" "button"
     And I should see "Test Guest User"
+    And I click on "Leave Meeting" "link"
+    And I should see "C1: Room recordings"
+
+  Scenario: Unenrolled student users should be able to join as a guest when the meeting is running.
+    When I am on the "Room recordings" Activity page logged in as teacher
+    And "Join session" "link" should exist
+    And I click on "Join session" "link"
+    And I switch to the main window
+    And I log out
+    And I close all opened windows
+    And I am on the "Room recordings" "mod_bigbluebuttonbn > BigblueButtonBN Guest" page logged in as uraverst
+    Then I should see "Guest username"
+    And I should see "Password"
+    Then the field "username" matches value "Uerry Uravers"
+    And I click on "Join meeting" "button"
+    And I should see "Uerry Uravers"
     And I click on "Leave Meeting" "link"
     And I should see "C1: Room recordings"
