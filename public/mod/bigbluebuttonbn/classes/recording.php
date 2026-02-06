@@ -69,6 +69,9 @@ class recording extends persistent {
     /** @var bool Whether metadata been changed so the remote information needs to be updated ? */
     protected $metadatachanged = false;
 
+    /** @var bool When true, skip remote BBB deletion in before_delete(). */
+    protected $localdeleteonly = false;
+
     /** @var int A refresh period for recordings, defaults to 300s (5mins) */
     public const RECORDING_REFRESH_DEFAULT_PERIOD = 300;
 
@@ -436,6 +439,10 @@ class recording extends persistent {
      * @return void
      */
     protected function before_delete() {
+        if ($this->localdeleteonly) {
+            return;
+        }
+
         $recordid = $this->get('recordingid');
         if ($recordid && !$this->get('imported')) {
             recording_proxy::delete_recording($recordid);
@@ -443,6 +450,18 @@ class recording extends persistent {
             $cachedrecordings = cache::make('mod_bigbluebuttonbn', 'recordings');
             $cachedrecordings->delete($recordid);
         }
+    }
+
+    /**
+     * Mark this recording so that delete() only removes the local DB row
+     * and does NOT delete the recording from the BigBlueButton server.
+     *
+     * @param bool $localonly
+     * @return $this
+     */
+    public function set_local_delete_only(bool $localonly = true): self {
+        $this->localdeleteonly = $localonly;
+        return $this;
     }
 
     /**
