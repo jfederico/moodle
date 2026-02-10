@@ -36,7 +36,74 @@ define(['jquery', 'core/form-autocomplete'], function($, autocomplete) {
             $select.attr('data-bbb-tags-enhanced', '1');
         }
 
-        return autocomplete.enhance.apply(autocomplete, args);
+        return autocomplete.enhance.apply(autocomplete, args).then(function() {
+            // Track insertion order of selected values.
+            var selectionOrder = [];
+
+            // Seed with currently selected options (preserves stored order from PHP).
+            $select.find('option:selected').each(function() {
+                selectionOrder.push(this.value);
+            });
+
+            // Find the pill container rendered by autocomplete.
+            var $pillContainer = $select.parent().find('.form-autocomplete-selection');
+
+            /**
+             * Reorder both <option> elements and visible pills to match tracked order.
+             * Called synchronously inside the change handler — pills already exist in
+             * the DOM at that point, so there is no flicker.
+             */
+            var reorder = function() {
+                // Reorder <option> elements (affects future renders).
+                selectionOrder.forEach(function(val) {
+                    var $opt = $select.find('option[value="' + val + '"]');
+                    if ($opt.length) {
+                        $select.append($opt);
+                    }
+                });
+                // Reorder visible pills (fixes current render).
+                if ($pillContainer.length) {
+                    selectionOrder.forEach(function(val) {
+                        var $pill = $pillContainer.find('[data-value="' + val + '"]');
+                        if ($pill.length) {
+                            $pillContainer.append($pill);
+                        }
+                    });
+                }
+            };
+
+            // The change event fires AFTER updateSelectionList has rendered the pills,
+            // so we can reorder them synchronously — no setTimeout, no flicker.
+            $select.on('change', function() {
+                var currentSelected = [];
+                $select.find('option:selected').each(function() {
+                    if (this.value) {
+                        currentSelected.push(this.value);
+                    }
+                });
+
+                // Remove deselected values.
+                for (var i = selectionOrder.length - 1; i >= 0; i--) {
+                    if (currentSelected.indexOf(selectionOrder[i]) === -1) {
+                        selectionOrder.splice(i, 1);
+                    }
+                }
+
+                // Append newly selected values at the end.
+                currentSelected.forEach(function(val) {
+                    if (selectionOrder.indexOf(val) === -1) {
+                        selectionOrder.push(val);
+                    }
+                });
+
+                reorder();
+            });
+
+            // Apply initial order.
+            reorder();
+
+            return;
+        });
     };
 
     return {

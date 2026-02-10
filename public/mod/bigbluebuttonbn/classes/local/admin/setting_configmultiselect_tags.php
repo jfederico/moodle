@@ -74,27 +74,27 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
         if (!$loaded) {
             return false;
         }
+
+        // Remove any empty keys that may have been introduced.
+        $cleaned = [];
+        foreach ($this->choices as $key => $label) {
+            if ((string)$key !== '') {
+                $cleaned[$key] = $label;
+            }
+        }
+        $this->choices = $cleaned;
+
         $current = $this->config_read($this->name);
         if (!empty($current)) {
             $values = array_filter(array_map('trim', explode(',', $current)), static function(string $value): bool {
                 return $value !== '';
             });
-            // Rebuild choices preserving the order from stored values.
-            $newchoices = [];
+            // Add any custom tags (not in preset choices) so they appear in the select.
             foreach ($values as $value) {
-                if (array_key_exists($value, $this->choices)) {
-                    $newchoices[$value] = $this->choices[$value];
-                } else {
-                    $newchoices[$value] = $this->resolve_label($value);
+                if (!array_key_exists($value, $this->choices)) {
+                    $this->choices[$value] = $this->resolve_label($value);
                 }
             }
-            // Add any remaining preset choices that weren't in the stored values.
-            foreach ($this->choices as $key => $label) {
-                if (!array_key_exists($key, $newchoices)) {
-                    $newchoices[$key] = $label;
-                }
-            }
-            $this->choices = $newchoices;
         }
         return true;
     }
@@ -111,13 +111,35 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
         }
         unset($data['xxxxx']);
 
-        $values = [];
+        // Collect and normalize submitted values.
+        $submitted = [];
         foreach ($data as $value) {
             $value = trim(clean_param($value, PARAM_ALPHANUMEXT));
-            if ($value === '' || in_array($value, $values, true)) {
+            if ($value === '' || in_array($value, $submitted, true)) {
                 continue;
             }
-            $values[] = $value;
+            $submitted[] = $value;
+        }
+
+        // Preserve order: keep existing stored values that are still selected.
+        $current = $this->config_read($this->name);
+        $values = [];
+        if (!empty($current)) {
+            $existing = array_filter(array_map('trim', explode(',', $current)), static function(string $v): bool {
+                return $v !== '';
+            });
+            foreach ($existing as $value) {
+                if (in_array($value, $submitted, true)) {
+                    $values[] = $value;
+                }
+            }
+        }
+
+        // Append any new values that weren't previously stored.
+        foreach ($submitted as $value) {
+            if (!in_array($value, $values, true)) {
+                $values[] = $value;
+            }
         }
 
         $stored = implode(',', $values);
