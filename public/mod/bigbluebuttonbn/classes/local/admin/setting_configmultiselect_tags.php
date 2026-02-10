@@ -79,11 +79,22 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
             $values = array_filter(array_map('trim', explode(',', $current)), static function(string $value): bool {
                 return $value !== '';
             });
+            // Rebuild choices preserving the order from stored values.
+            $newchoices = [];
             foreach ($values as $value) {
-                if (!array_key_exists($value, $this->choices)) {
-                    $this->choices[$value] = $this->resolve_label($value);
+                if (array_key_exists($value, $this->choices)) {
+                    $newchoices[$value] = $this->choices[$value];
+                } else {
+                    $newchoices[$value] = $this->resolve_label($value);
                 }
             }
+            // Add any remaining preset choices that weren't in the stored values.
+            foreach ($this->choices as $key => $label) {
+                if (!array_key_exists($key, $newchoices)) {
+                    $newchoices[$key] = $label;
+                }
+            }
+            $this->choices = $newchoices;
         }
         return true;
     }
@@ -103,13 +114,13 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
         $values = [];
         foreach ($data as $value) {
             $value = trim(clean_param($value, PARAM_ALPHANUMEXT));
-            if ($value === '') {
+            if ($value === '' || in_array($value, $values, true)) {
                 continue;
             }
-            $values[$value] = $value;
+            $values[] = $value;
         }
 
-        $stored = implode(',', array_keys($values));
+        $stored = implode(',', $values);
         return $this->config_write($this->name, $stored) ? '' : get_string('errorsetting', 'admin');
     }
 
