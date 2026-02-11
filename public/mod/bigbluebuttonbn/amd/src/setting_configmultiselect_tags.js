@@ -75,6 +75,11 @@ define(['jquery', 'core/form-autocomplete'], function($, autocomplete) {
             // The change event fires AFTER updateSelectionList has rendered the pills,
             // so we can reorder them synchronously — no setTimeout, no flicker.
             $select.on('change', function() {
+                // Remove empty <option> elements injected by the autocomplete on deselect.
+                $select.find('option').filter(function() {
+                    return !this.value;
+                }).remove();
+
                 var currentSelected = [];
                 $select.find('option:selected').each(function() {
                     if (this.value) {
