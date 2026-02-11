@@ -224,8 +224,9 @@ define([
     const deselectItem = async(options, state, item, originalSelect) => {
         var selectedItemValue = $(item).attr('data-value');
 
-        // Preprend an empty option to the select list to avoid having a default selected option.
-        if (originalSelect.find('option').first().attr('value') !== undefined) {
+        // Prepend an empty option to the select list to avoid having a default selected option.
+        // For multiselect, this is not needed and causes blank lines to appear in the dropdown.
+        if (!options.multiple && originalSelect.find('option').first().attr('value') !== undefined) {
             originalSelect.prepend($('<option>'));
         }
 
