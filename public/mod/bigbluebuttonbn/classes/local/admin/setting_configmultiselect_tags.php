@@ -210,7 +210,7 @@ class setting_configmultiselect_tags extends admin_setting_configmultiselect {
             $this->showsuggestions,
             $this->noselectionstring,
         ];
-        $PAGE->requires->js_call_amd('mod_bigbluebuttonbn/setting_configmultiselect_tags', 'init', $params);
+        $PAGE->requires->js_call_amd('mod_bigbluebuttonbn/multiselect_tags', 'init', $params);
 
         return $html;
     }

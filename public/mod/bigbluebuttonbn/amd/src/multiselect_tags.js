@@ -16,7 +16,7 @@
 /**
  * Helper that hides the fallback select and delegates to the autocomplete enhancer.
  *
- * @module     mod_bigbluebuttonbn/setting_configmultiselect_tags
+ * @module     mod_bigbluebuttonbn/multiselect_tags
  * @copyright  2025 Blindside Networks Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
@@ -33,7 +33,7 @@ define(['jquery', 'core/form-autocomplete'], function($, autocomplete) {
         const $select = $(selector);
 
         if ($select.length) {
-            $select.attr('data-bbb-tags-enhanced', '1');
+            $select.attr('data-tags-enhanced', '1');
         }
 
         return autocomplete.enhance.apply(autocomplete, args).then(function() {
