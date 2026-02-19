@@ -84,9 +84,19 @@ class recording_row_playback implements renderable, templatable {
                         'data-action' => 'play',
                         'data-target' => $playback['type'],
                     ];
+                    $stringid = 'view_recording_format_' . $playback['type'];
+                    $stringtext = null;
+                    try {
+                        $stringtext = get_string($stringid, 'mod_bigbluebuttonbn');
+                    } catch (\Exception $e) {
+                        // Fallback if string does not exist.
+                    }
+                    if ($stringtext === null || $stringtext === $stringid) {
+                        $stringtext = ucfirst($playback['type']);
+                    }
                     $actionlink = new \action_link(
                         $playback['url'],
-                        recording_data::type_text($playback['type']),
+                        $stringtext,
                         null,
                         $linkattributes
                     );
@@ -113,9 +123,19 @@ class recording_row_playback implements renderable, templatable {
         $canviewallformats = roles::has_capability_in_course(
             $this->recording->get('courseid'), 'mod/bigbluebuttonbn:viewallrecordingformats');
         $issafeformat = false;
-        // Now check the list of safe formats.
-        if ($safeformats = config::get('recording_safe_formats')) {
+        // Use the admin-configurable available formats if set, otherwise fallback to default.
+        global $CFG;
+        $availableformats = isset($CFG->bigbluebuttonbn_recording_safe_formats_options)
+            ? array_map('trim', explode(',', $CFG->bigbluebuttonbn_recording_safe_formats_options))
+            : ['notes', 'podcast', 'presentation', 'screenshare', 'statistics', 'video'];
+        $safeformats = config::get('recording_safe_formats');
+        if ($safeformats === '' || $safeformats === false || $safeformats === null) {
+            $safeformats = 'presentation,video';
+        }
+        if ($safeformats) {
             $safeformatarray = str_getcsv($safeformats, escape: '\\');
+            // Only allow safe formats that are in the available formats list.
+            $safeformatarray = array_intersect($safeformatarray, $availableformats);
             $issafeformat = in_array($playback['type'], $safeformatarray);
         }
         return ($canmanagerecordings && $canviewallformats) || $issafeformat;

@@ -96,7 +96,7 @@ final class recording_row_playback_test extends \advanced_testcase {
      * @dataProvider should_be_included_data_provider
      */
     public function test_should_be_included(string $role, array $canview, ?object $globalsettings = null): void {
-        global $PAGE;
+        global $CFG, $PAGE;
         $this->resetAfterTest();
         ['recordings' => $recordingsdata, 'activity' => $activity] = $this->create_activity_with_recordings(
             $this->get_course(),
@@ -105,24 +105,36 @@ final class recording_row_playback_test extends \advanced_testcase {
         );
         $user = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($user->id, $activity->course, $role);
+        $oldcfgsettings = [];
         if (!empty($globalsettings)) {
             foreach ((array) $globalsettings as $key => $value) {
-                set_config($key, $value);
+                $oldcfgsettings[$key] = property_exists($CFG, $key) ? $CFG->{$key} : null;
+                $CFG->{$key} = $value;
             }
         }
-        $this->setUser($user);
-        $recording = new recording(0, $recordingsdata[0]);
-        $rowplayback = new recording_row_playback($recording, instance::get_from_instanceid($activity->id));
-        $rowinfo = $rowplayback->export_for_template($PAGE->get_renderer('mod_bigbluebuttonbn'));
-        $playbacktypes = array_map(function($playback) {
-            foreach ($playback->attributes as $attributearray) {
-                if (in_array('data-target', $attributearray)) {
-                    return $attributearray['value'];
+        try {
+            $this->setUser($user);
+            $recording = new recording(0, $recordingsdata[0]);
+            $rowplayback = new recording_row_playback($recording, instance::get_from_instanceid($activity->id));
+            $rowinfo = $rowplayback->export_for_template($PAGE->get_renderer('mod_bigbluebuttonbn'));
+            $playbacktypes = array_map(function($playback) {
+                foreach ($playback->attributes as $attributearray) {
+                    if ($attributearray['name'] === 'data-target') {
+                        return $attributearray['value'];
+                    }
+                }
+                return '';
+            }, $rowinfo->playbacks);
+            $this->assertEqualsCanonicalizing($canview, $playbacktypes);
+        } finally {
+            foreach ($oldcfgsettings as $key => $oldvalue) {
+                if ($oldvalue === null) {
+                    unset($CFG->{$key});
+                } else {
+                    $CFG->{$key} = $oldvalue;
                 }
             }
-            return '';
-        }, $rowinfo->playbacks);
-        $this->assertEmpty(array_diff($canview, $playbacktypes));
+        }
     }
 
     /**
@@ -142,8 +154,16 @@ final class recording_row_playback_test extends \advanced_testcase {
             ],
             'student can see only default except when we add more format to all users' => [
                 'role' => 'student',
-                'canview' => ['video', 'presentation', 'settings'],
+                'canview' => ['video', 'presentation'],
                 'globalsettings' => (object) ['bigbluebuttonbn_recording_safe_formats' => 'video,presentation,settings']
+            ],
+            'student can see additional safe format only when it is available' => [
+                'role' => 'student',
+                'canview' => ['video', 'presentation', 'settings'],
+                'globalsettings' => (object) [
+                    'bigbluebuttonbn_recording_safe_formats' => 'video,presentation,settings',
+                    'bigbluebuttonbn_recording_safe_formats_options' => 'video,presentation,settings',
+                ]
             ]
 
         ];

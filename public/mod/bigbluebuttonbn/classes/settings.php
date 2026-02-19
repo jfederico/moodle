@@ -382,19 +382,27 @@ class settings {
                 $item,
                 $recordingsetting
             );
-            $recordingsafeformat = [
-                'notes' => get_string('view_recording_format_notes', 'mod_bigbluebuttonbn'),
-                'podcast' => get_string('view_recording_format_podcast', 'mod_bigbluebuttonbn'),
-                'presentation' => get_string('view_recording_format_presentation', 'mod_bigbluebuttonbn'),
-                'screenshare' => get_string('view_recording_format_screenshare', 'mod_bigbluebuttonbn'),
-                'statistics' => get_string('view_recording_format_statistics', 'mod_bigbluebuttonbn'),
-                'video' => get_string('view_recording_format_video', 'mod_bigbluebuttonbn'),
-            ];
+            global $CFG;
+            $availableformats = isset($CFG->bigbluebuttonbn_recording_safe_formats_options)
+                ? array_map('trim', explode(',', $CFG->bigbluebuttonbn_recording_safe_formats_options))
+                : ['notes', 'podcast', 'presentation', 'screenshare', 'statistics', 'video'];
+            $recordingsafeformat = [];
+            $stringmanager = \get_string_manager();
+            foreach ($availableformats as $format) {
+                $stringid = 'view_recording_format_' . $format;
+                if ($stringmanager->string_exists($stringid, 'mod_bigbluebuttonbn')) {
+                    $stringtext = get_string($stringid, 'mod_bigbluebuttonbn');
+                } else {
+                    $stringtext = \core_text::strtotitle(str_replace('_', ' ', $format));
+                }
+                $recordingsafeformat[$format] = $stringtext;
+            }
+            $defaultselected = array_values(array_intersect(['presentation', 'video'], $availableformats));
             $item = new admin_setting_configmultiselect(
                 'bigbluebuttonbn_recording_safe_formats',
                 get_string('config_recording_safe_formats', 'mod_bigbluebuttonbn'),
                 get_string('config_recording_safe_formats_description', 'mod_bigbluebuttonbn'),
-                ['video', 'presentation'],
+                $defaultselected,
                 $recordingsafeformat
             );
             $this->add_conditional_element(
