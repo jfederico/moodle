@@ -22,6 +22,7 @@ use mod_bigbluebuttonbn\completion\custom_completion;
 use mod_bigbluebuttonbn\extension;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
+use mod_bigbluebuttonbn\plugininfo\bbbext;
 use mod_bigbluebuttonbn\meeting;
 use mod_bigbluebuttonbn\test\subplugins_test_helper_trait;
 use mod_bigbluebuttonbn\test\testcase_helper_trait;
@@ -463,6 +464,47 @@ final class extension_test extends \advanced_testcase {
         }
         $sortedlist = extension::get_sorted_plugins_list($pluginlist);
         $this->assertSame($expected, $sortedlist);
+    }
+
+    /**
+     * Test fixture subplugins are considered disabled when BBB module is disabled.
+     *
+     * @return void
+     * @covers \mod_bigbluebuttonbn\plugininfo\bbbext::get_enabled_plugins
+     */
+    public function test_fixture_subplugins_disabled_when_bbb_is_disabled(): void {
+        \core\plugininfo\mod::enable_plugin('bigbluebuttonbn', 0);
+        unset_config('disabled', extension::BBB_EXTENSION_PLUGIN_NAME . '_simple');
+
+        $this->assertSame([], bbbext::get_enabled_plugins());
+    }
+
+    /**
+     * Test fixture subplugins are enabled when BBB module is enabled and subplugin is not disabled.
+     *
+     * @return void
+     * @covers \mod_bigbluebuttonbn\plugininfo\bbbext::get_enabled_plugins
+     */
+    public function test_fixture_subplugins_enabled_when_bbb_is_enabled(): void {
+        \core\plugininfo\mod::enable_plugin('bigbluebuttonbn', 1);
+        unset_config('disabled', extension::BBB_EXTENSION_PLUGIN_NAME . '_simple');
+
+        $enabledplugins = bbbext::get_enabled_plugins();
+        $this->assertArrayHasKey('simple', $enabledplugins);
+    }
+
+    /**
+     * Test fixture subplugins are disabled when their disabled flag is set.
+     *
+     * @return void
+     * @covers \mod_bigbluebuttonbn\plugininfo\bbbext::get_enabled_plugins
+     */
+    public function test_fixture_subplugins_disabled_when_subplugin_flag_is_set(): void {
+        \core\plugininfo\mod::enable_plugin('bigbluebuttonbn', 1);
+        set_config('disabled', 1, extension::BBB_EXTENSION_PLUGIN_NAME . '_simple');
+
+        $enabledplugins = bbbext::get_enabled_plugins();
+        $this->assertArrayNotHasKey('simple', $enabledplugins);
     }
 
     /**
