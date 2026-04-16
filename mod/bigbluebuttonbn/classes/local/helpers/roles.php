@@ -222,10 +222,6 @@ class roles {
             'children' => [],
         ];
 
-        if (empty($bbactivity)) {
-            return $data;
-        }
-
         $data['user']['children'] = self::get_users_array($context, $bbactivity);
 
         return $data;

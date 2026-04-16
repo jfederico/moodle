@@ -33,6 +33,28 @@ final class roles_test extends \advanced_testcase {
     use testcase_helper_trait;
 
     /**
+     * Test create mode participant data includes enrolled users.
+     */
+    public function test_get_participant_data_without_activity_populates_user_children(): void {
+        $this->resetAfterTest();
+        $numstudents = 6;
+        $numteachers = 2;
+        $groupsnum = 2;
+
+        list($course, $groups, $students, $teachers, $bbactivity, $roleids) =
+            $this->setup_course_students_teachers(
+                (object) ['enablecompletion' => true, 'groupmode' => strval(VISIBLEGROUPS), 'groupmodeforce' => 1],
+                $numstudents, $numteachers, $groupsnum);
+
+        $context = context_course::instance($course->id);
+        $participantdata = roles::get_participant_data($context, null);
+
+        $this->assertArrayHasKey('user', $participantdata);
+        $this->assertArrayHasKey('children', $participantdata['user']);
+        $this->assertCount($numstudents + $numteachers, $participantdata['user']['children']);
+    }
+
+    /**
      * Test select separate group prevent all
      *
      */
