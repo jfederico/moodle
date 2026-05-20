@@ -401,6 +401,50 @@ final class meeting_test extends \advanced_testcase {
         $this->assertEquals(3, $meetinginfo->totalusercount);
         $this->assertEquals(1, $meetinginfo->moderatorcount);
     }
+
+    /**
+     * Test that join_meeting recovers a missing recording row when a prior join attempt
+     * failed after BigBlueButton created the meeting but before the database insert completed.
+     *
+     * @covers ::join_meeting
+     * @covers \mod_bigbluebuttonbn\recording::ensure_exists
+     */
+    public function test_join_meeting_recovers_missing_recording_row(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $bbbgenerator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+
+        // Create a recorded activity.
+        $activity = $bbbgenerator->create_instance([
+            'course' => $this->get_course()->id,
+            'record' => 1,
+        ]);
+        $instance = instance::get_from_instanceid($activity->id);
+
+        // Simulate the partial failure: BigBlueButton has the meeting on its side (the create
+        // API call succeeded) but no recording row was written to Moodle's database (the DB
+        // insert never ran because the PHP process failed between the two operations).
+        $bbbgenerator->create_meeting(['instanceid' => $instance->get_instance_id()]);
+
+        $this->assertFalse(
+            $DB->record_exists('bigbluebuttonbn_recordings', ['bigbluebuttonbnid' => $activity->id]),
+            'No recording row should exist before join_meeting() is called'
+        );
+
+        // The user retries joining. join_meeting() detects the meeting is already running on
+        // BigBlueButton and should recover the missing recording row using the internalMeetingID
+        // returned by getMeetingInfo.
+        meeting::join_meeting($instance, logger::ORIGIN_BASE);
+
+        $this->assertTrue(
+            $DB->record_exists('bigbluebuttonbn_recordings', ['bigbluebuttonbnid' => $activity->id]),
+            'Recording row should have been created by the join_meeting() recovery logic'
+        );
+    }
+
     /**
      * Send a join meeting API CALL
      *
