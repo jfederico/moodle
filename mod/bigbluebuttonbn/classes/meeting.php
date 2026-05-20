@@ -67,9 +67,20 @@ class meeting {
     public static function join_meeting(instance $instance, $origin = logger::ORIGIN_BASE): string {
         // See if the session is in progress.
         $meeting = new meeting($instance);
+        $meetinginfo = $meeting->get_meeting_info(true);
         // As the meeting doesn't exist, try to create it.
-        if (empty($meeting->get_meeting_info(true)->createtime)) {
+        if (empty($meetinginfo->createtime)) {
             $meeting->create_meeting();
+        } else if ($instance->is_recorded() && !empty($meetinginfo->internalmeetingid)) {
+            // Meeting already exists on BBB. If a prior join attempt failed after the BBB create
+            // call but before the DB insert (e.g. PHP timeout), the recording row may be missing.
+            // Recover it now using the internalMeetingID returned by getMeetingInfo.
+            recording::ensure_exists(
+                $instance->get_course_id(),
+                $instance->get_instance_id(),
+                $meetinginfo->internalmeetingid,
+                $instance->get_group_id()
+            );
         }
         return $meeting->join($origin);
     }
@@ -254,6 +265,7 @@ class meeting {
         if (!empty($info)) {
             $meetinginfo->statusrunning = $info['running'] === 'true';
             $meetinginfo->createtime = $info['createTime'] ?? null;
+            $meetinginfo->internalmeetingid = $info['internalMeetingID'] ?? null;
             $totalusercount = isset($info['participantCount']) ? $info['participantCount'] : 0;
         }
 

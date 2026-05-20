@@ -407,6 +407,44 @@ class recording extends persistent {
     }
 
     /**
+     * Ensure a recording row exists for the given internalMeetingID.
+     *
+     * Called when a user joins a meeting that already exists on BBB, to recover a recording row
+     * that was never inserted because a previous join attempt failed after the BBB create API call
+     * (e.g. PHP timeout) but before the DB insert completed.
+     *
+     * Safe to call concurrently: a duplicate-insert race is caught and silently ignored.
+     *
+     * @param int $courseid
+     * @param int $bigbluebuttonbnid
+     * @param string $recordingid internalMeetingID returned by BBB getMeetingInfo
+     * @param int $groupid
+     */
+    public static function ensure_exists(
+        int $courseid,
+        int $bigbluebuttonbnid,
+        string $recordingid,
+        int $groupid
+    ): void {
+        global $DB;
+        if ($DB->record_exists(static::TABLE, ['recordingid' => $recordingid])) {
+            return;
+        }
+        try {
+            $recording = new self(0, (object) [
+                'courseid'          => $courseid,
+                'bigbluebuttonbnid' => $bigbluebuttonbnid,
+                'recordingid'       => $recordingid,
+                'groupid'           => $groupid,
+            ]);
+            $recording->create();
+        } catch (\Exception $e) {
+            // Concurrent insert from another request — row now exists, nothing to do.
+            debugging('BBB recording row concurrent insert: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
+
+    /**
      * Create a new imported recording from current recording
      *
      * @param instance $targetinstance
