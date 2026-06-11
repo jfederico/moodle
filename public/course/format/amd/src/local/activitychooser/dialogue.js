@@ -415,6 +415,9 @@ class ActivityChooserDialogue {
         if (option === null) {
             return;
         }
+        if (option.getAttribute('aria-disabled') === 'true') {
+            return;
+        }
         this.selectedModule = option;
         this.dialogueDom.markChooserOptionAsSelected(option, getFirst(this.modal.getFooter()));
     }
