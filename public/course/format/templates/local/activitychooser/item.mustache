@@ -28,13 +28,16 @@
         },
         "icon": "<img class='icon' src='http://urltooptionicon' alt='icon'>",
         "purpose": "content",
-        "branded": 0
+        "branded": 0,
+        "disabled": false,
+        "disabledreason": null
     }
 }}
 <div role="menuitem"
     tabindex="-1"
     aria-label="{{title}}"
-    class="option btn m-sm-1 position-relative"
+    {{#disabled}}aria-disabled="true"{{/disabled}}
+    class="option btn m-sm-1 position-relative{{#disabled}} opacity-50{{/disabled}}"
     data-region="chooser-option-container"
     data-internal="{{name}}"
     data-modname="{{componentname}}_{{link}}"
@@ -45,6 +48,7 @@
             {{{icon}}}
         </div>
         <div>
+            {{^disabled}}
             <a href="{{link}}"
                 title="{{#str}} addnew, moodle, {{title}} {{/str}}"
                 tabindex="-1"
@@ -53,11 +57,21 @@
             >
                 <div class="optionname clamp-2">{{title}}</div>
             </a>
+            {{/disabled}}
+            {{#disabled}}
+            <span
+                title="{{disabledreason}}"
+                class="optioninfo text-decoration-none text-body stretched-link"
+            >
+                <div class="optionname clamp-2">{{title}}</div>
+            </span>
+            {{/disabled}}
             <div class="optionactions d-flex align-items-start" role="group" data-region="chooser-option-actions-container">
                 <button class="btn btn-icon m-0 optionaction" data-action="show-option-summary" tabindex="-1" title="{{#str}} informationformodule, core_course, {{title}} {{/str}}">
                     <span aria-hidden="true">{{#pix}} docs, core {{/pix}}</span>
                 </button>
                 {{^legacyitem}}
+                {{^disabled}}
                 <button class="btn btn-icon m-0 optionaction"
                         data-action="manage-module-favourite"
                         data-favourited="{{favourite}}"
@@ -91,6 +105,7 @@
                         {{#pix}} i/star-o, core {{/pix}}
                     </span>
                 </button>
+                {{/disabled}}
                 {{/legacyitem}}
             </div>
         </div>

@@ -613,6 +613,13 @@ $string['view_room'] = 'View room';
 $string['view_section_title_presentation'] = 'Presentation file';
 $string['view_section_title_recordings'] = 'Recordings';
 $string['waitformoderator'] = 'Waiting for a moderator to join.';
+$string['unconfigured_chooser_admin'] = 'BigBlueButton is not configured. Please complete the setup in Site administration.';
+$string['unconfigured_chooser_user'] = 'BigBlueButton is not available. Please contact your site administrator to complete the setup.';
+$string['unconfigured_view_heading'] = 'BigBlueButton is not yet configured';
+$string['unconfigured_view_admin'] = 'The BigBlueButton server is not yet configured. You can complete the setup in Site administration.';
+$string['unconfigured_view_teacher'] = 'BigBlueButton is not available. Please contact your site administrator to complete the setup.';
+$string['unconfigured_view_student'] = 'BigBlueButton is not available. Please contact your teacher.';
+$string['unconfigured_view_settings_link'] = 'BigBlueButton settings';
 
 // Deprecated since Moodle 4.5.
 $string['view_mobile_message_groups_not_supported'] = 'This instance is enabled to work with groups but the mobile app doesn\'t yet support it. Please use the web version.';
