@@ -80,12 +80,12 @@ final class extension_test extends \advanced_testcase {
         $reflectionextension = new \ReflectionClass(extension::class);
         $getclassimplementing = $reflectionextension->getMethod('get_instances_implementing');
         $allfoundinstances = $getclassimplementing->invoke(null, $apiclass);
-        $foundclasses = array_map(
+        $foundclasses = array_values(array_map(
             function($instance) {
                 return get_class($instance);
             },
             $allfoundinstances
-        );
+        ));
         $this->assertEquals($extensionclasses, $foundclasses);
     }
 
@@ -496,11 +496,18 @@ final class extension_test extends \advanced_testcase {
     private function enable_plugins(bool $bbbenabled) {
         // First make sure that either BBB is enabled or not.
         \core\plugininfo\mod::enable_plugin('bigbluebuttonbn', $bbbenabled ? 1 : 0);
-        $plugin = extension::BBB_EXTENSION_PLUGIN_NAME . '_simple';
-        if ($bbbenabled) {
-            unset_config('disabled', $plugin);
-        } else {
-            set_config('disabled', 'disabled', $plugin);
+        $plugins = \core_plugin_manager::instance()->get_plugins_of_type(extension::BBB_EXTENSION_PLUGIN_NAME);
+        foreach ($plugins as $pluginname => $plugininfo) {
+            unset($plugininfo);
+            $component = extension::BBB_EXTENSION_PLUGIN_NAME . '_' . $pluginname;
+            if ($pluginname === 'simple' && $bbbenabled) {
+                unset_config('disabled', $component);
+                continue;
+            }
+
+            set_config('disabled', 'disabled', $component);
         }
+
+        \core_plugin_manager::reset_caches();
     }
 }
