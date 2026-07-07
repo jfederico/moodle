@@ -33,6 +33,59 @@ final class roles_test extends \advanced_testcase {
     use testcase_helper_trait;
 
     /**
+     * Test create mode participant data does not preload enrolled users.
+     */
+    public function test_get_participant_data_without_activity_has_empty_user_children(): void {
+        $this->resetAfterTest();
+        $numstudents = 6;
+        $numteachers = 2;
+        $groupsnum = 2;
+
+        list($course, $groups, $students, $teachers, $bbactivity, $roleids) =
+            $this->setup_course_students_teachers(
+                (object) ['enablecompletion' => true, 'groupmode' => strval(VISIBLEGROUPS), 'groupmodeforce' => 1],
+                $numstudents, $numteachers, $groupsnum);
+
+        $context = context_course::instance($course->id);
+        $participantdata = roles::get_participant_data($context, null);
+
+        $this->assertArrayHasKey('user', $participantdata);
+        $this->assertArrayHasKey('children', $participantdata['user']);
+        $this->assertEmpty($participantdata['user']['children']);
+        $this->assertFalse($participantdata['user']['loaded']);
+    }
+
+    /**
+     * Test edit mode only preloads selected users from participant rules.
+     */
+    public function test_get_participant_data_with_activity_only_preloads_selected_users(): void {
+        $this->resetAfterTest();
+        $numstudents = 6;
+        $numteachers = 2;
+        $groupsnum = 2;
+
+        [$course, $groups, $students, $teachers, $bbactivity, $roleids] =
+            $this->setup_course_students_teachers(
+                (object) ['enablecompletion' => true, 'groupmode' => strval(VISIBLEGROUPS), 'groupmodeforce' => 1],
+                $numstudents, $numteachers, $groupsnum);
+
+        $bbactivity->participants = json_encode([
+            ['selectiontype' => 'all', 'selectionid' => 'all', 'role' => roles::ROLE_VIEWER],
+            ['selectiontype' => 'user', 'selectionid' => (string) $students[0]->id, 'role' => roles::ROLE_MODERATOR],
+            ['selectiontype' => 'user', 'selectionid' => (string) $students[1]->id, 'role' => roles::ROLE_VIEWER],
+        ]);
+
+        $context = context_course::instance($course->id);
+        $this->setUser($teachers[0]);
+        $participantdata = roles::get_participant_data($context, $bbactivity);
+
+        $this->assertCount(2, $participantdata['user']['children']);
+        $this->assertArrayHasKey($students[0]->id, $participantdata['user']['children']);
+        $this->assertArrayHasKey($students[1]->id, $participantdata['user']['children']);
+        $this->assertFalse($participantdata['user']['loaded']);
+    }
+
+    /**
      * Test select separate group prevent all
      *
      */

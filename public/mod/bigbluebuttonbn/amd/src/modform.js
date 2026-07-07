@@ -21,9 +21,10 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {getString} from 'core/str';
+import { getString } from 'core/str';
 import Notification from 'core/notification';
 import Templates from "core/templates";
+import { getParticipantSelectionUsers } from './repository';
 
 /**
  * Get all selectors in one place.
@@ -69,7 +70,7 @@ export const init = (info) => {
 
     ELEMENT_SELECTOR.participantSelectionType().addEventListener('change', (e) => {
         const currentTypeSelect = e.target;
-        updateSelectionFromType(currentTypeSelect);
+        updateSelectionFromType(currentTypeSelect, info.courseId).catch(Notification.exception);
     });
 
     ELEMENT_SELECTOR.participantAddButton().addEventListener('click', (e) => {
@@ -78,7 +79,7 @@ export const init = (info) => {
         participantAddFromCurrentSelection();
     });
 
-    participantListInit();
+    participantListInit().catch(Notification.exception);
 };
 
 /**
@@ -179,9 +180,11 @@ const applyInstanceTypeProfile = (profileType, isFeatureEnabled) => {
 
 /**
  * Init the participant list
+ *
  */
-const participantListInit = () => {
-    const participantData = JSON.parse(ELEMENT_SELECTOR.participantData().dataset.participantData);
+const participantListInit = async () => {
+    const participantDataNode = ELEMENT_SELECTOR.participantData();
+    const participantData = JSON.parse(participantDataNode.dataset.participantData);
     const participantList = getParticipantList();
     participantList.forEach(participant => {
         const selectionTypeValue = participant.selectiontype;
@@ -196,6 +199,30 @@ const participantListInit = () => {
 };
 
 /**
+ * Load the users for the participant selector if they are not already available.
+ *
+ * @param {object} participantData
+ * @param {HTMLElement} participantDataNode
+ * @param {number} courseId
+ * @returns {Promise<void>}
+ */
+const loadParticipantUsers = async (participantData, participantDataNode, courseId) => {
+    if (Array.isArray(participantData.user.children)) {
+        participantData.user.children = {};
+    }
+    if (participantData.user.loaded) {
+        return;
+    }
+
+    const response = await getParticipantSelectionUsers(courseId);
+    response.users.forEach(user => {
+        participantData.user.children[user.id] = user;
+    });
+    participantData.user.loaded = true;
+    participantDataNode.dataset.participantData = JSON.stringify(participantData);
+};
+
+/**
  * Add rows to the participant list depending on the current selection.
  *
  * @param {string} selectionTypeValue
@@ -204,13 +231,13 @@ const participantListInit = () => {
  * @param {boolean} canRemove
  * @returns {Promise<void>}
  */
-const participantAddToForm = async(selectionTypeValue, selectionValue, selectedRole, canRemove) => {
+const participantAddToForm = async (selectionTypeValue, selectionValue, selectedRole, canRemove) => {
     const participantData = JSON.parse(ELEMENT_SELECTOR.participantData().dataset.participantData);
     const sviewer = await getString('mod_form_field_participant_bbb_role_viewer', 'mod_bigbluebuttonbn');
     const smoderator = await getString('mod_form_field_participant_bbb_role_moderator', 'mod_bigbluebuttonbn');
     let roles = {
-        viewer: {'id': 'viewer', label: sviewer},
-        moderator: {'id': 'moderator', label: smoderator}
+        viewer: { 'id': 'viewer', label: sviewer },
+        moderator: { 'id': 'moderator', label: smoderator }
     };
     roles[selectedRole].isselected = true;
     try {
@@ -225,7 +252,7 @@ const participantAddToForm = async(selectionTypeValue, selectionValue, selectedR
             'roles': Object.values(roles),
             'canRemove': canRemove
         };
-        const {html, js} = await Templates.renderForPromise('mod_bigbluebuttonbn/participant_form_add', templateContext);
+        const { html, js } = await Templates.renderForPromise('mod_bigbluebuttonbn/participant_form_add', templateContext);
         const newNode = Templates.appendNodeContents(listTable, html, js)[0];
         newNode.querySelector('.participant-select').addEventListener('change', () => {
             participantListRoleUpdate(selectionTypeValue, selectionValue);
@@ -345,8 +372,9 @@ const participantAddFromCurrentSelection = () => {
  * Update selectable options when changing types
  *
  * @param {HTMLNode} currentTypeSelect
+ * @param {number} courseId
  */
-const updateSelectionFromType = (currentTypeSelect) => {
+const updateSelectionFromType = async (currentTypeSelect, courseId) => {
     const createNewOption = (selectItem, label, value) => {
         const option = document.createElement('option');
         option.text = label;
@@ -355,7 +383,8 @@ const updateSelectionFromType = (currentTypeSelect) => {
         selectItem.add(option);
     };
 
-    const participantData = JSON.parse(ELEMENT_SELECTOR.participantData().dataset.participantData);
+    const participantDataNode = ELEMENT_SELECTOR.participantData();
+    const participantData = JSON.parse(participantDataNode.dataset.participantData);
     // Clear all selection items.
     const participantSelect = ELEMENT_SELECTOR.participantSelection();
     while (participantSelect.firstChild) {
@@ -363,6 +392,11 @@ const updateSelectionFromType = (currentTypeSelect) => {
     }
     // Add options depending on the selection.
     if (currentTypeSelect.selectedIndex !== -1) {
+        if (currentTypeSelect.value === 'user') {
+            participantSelect.disabled = true;
+            await loadParticipantUsers(participantData, participantDataNode, courseId);
+        }
+
         const options = Object.values(participantData[currentTypeSelect.value].children);
         options.forEach(option => {
             createNewOption(participantSelect, option.name, option.id);
