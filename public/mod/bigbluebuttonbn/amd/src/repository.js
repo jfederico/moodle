@@ -21,7 +21,7 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {call as fetchMany} from 'core/ajax';
+import { call as fetchMany } from 'core/ajax';
 
 /**
  * Fetch the list of recordings from the server.
@@ -41,7 +41,7 @@ export const fetchRecordings = (bigbluebuttonbnid, tools, groupid) => {
         args.groupid = groupid;
     }
 
-    return fetchMany([{methodname: 'mod_bigbluebuttonbn_get_recordings', args}])[0];
+    return fetchMany([{ methodname: 'mod_bigbluebuttonbn_get_recordings', args }])[0];
 };
 
 /**
@@ -72,7 +72,7 @@ export const fetchRecordingsToImport = (
         args.groupid = groupid;
     }
 
-    return fetchMany([{methodname: 'mod_bigbluebuttonbn_get_recordings_to_import', args}])[0];
+    return fetchMany([{ methodname: 'mod_bigbluebuttonbn_get_recordings_to_import', args }])[0];
 };
 
 /**
@@ -116,6 +116,22 @@ export const completionValidate = (bigbluebuttonbnid) => fetchMany([
         methodname: 'mod_bigbluebuttonbn_completion_validate',
         args: {
             bigbluebuttonbnid
+        },
+    }
+])[0];
+
+
+/**
+ * Fetch users for the participant selector in the activity form.
+ *
+ * @param {number} courseid
+ * @returns {Promise}
+ */
+export const getParticipantSelectionUsers = (courseid) => fetchMany([
+    {
+        methodname: 'mod_bigbluebuttonbn_get_participant_selection_users',
+        args: {
+            courseid
         },
     }
 ])[0];

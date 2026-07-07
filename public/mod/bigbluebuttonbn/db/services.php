@@ -114,4 +114,12 @@ $functions = [
         'capabilities'  => 'mod/bigbluebuttonbn:join',
         'services'      => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
+    'mod_bigbluebuttonbn_get_participant_selection_users' => [
+        'classname'     => 'mod_bigbluebuttonbn\external\get_participant_selection_users',
+        'methodname'    => 'execute',
+        'description'   => 'Returns users available for the participant selector in the activity form.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'mod/bigbluebuttonbn:addinstance',
+    ],
 ];
