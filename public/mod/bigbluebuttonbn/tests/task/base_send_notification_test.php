@@ -17,6 +17,7 @@
 namespace mod_bigbluebuttonbn\task;
 
 use advanced_testcase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Class containing the scheduled task for lti module.
@@ -24,26 +25,53 @@ use advanced_testcase;
  * @package   mod_bigbluebuttonbn
  * @copyright 2023 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \mod_bigbluebuttonbn\task\base_send_notification
- * @coversDefaultClass \mod_bigbluebuttonbn\task\base_send_notification
  */
+#[CoversClass(base_send_notification::class)]
 final class base_send_notification_test extends advanced_testcase {
 
     /**
-     * Returns mock base_send_notification class
+     * Returns a concrete test double for the abstract notification task.
      *
      * @return base_send_notification
      */
     private function get_mock(): base_send_notification {
-        return $this->getMockForAbstractClass(
-            base_send_notification::class,
-            [],
-            '',
-            true,
-            true,
-            true,
-            []
-        );
+        return new class extends base_send_notification {
+            /**
+             * Returns the HTML message.
+             *
+             * @return string
+             */
+            protected function get_html_message(): string {
+                return '';
+            }
+
+            /**
+             * Returns the small message.
+             *
+             * @return string
+             */
+            protected function get_small_message(): string {
+                return '';
+            }
+
+            /**
+             * Returns the notification type.
+             *
+             * @return string
+             */
+            protected function get_notification_type(): string {
+                return 'test';
+            }
+
+            /**
+             * Returns the subject.
+             *
+             * @return string
+             */
+            protected function get_subject(): string {
+                return 'test';
+            }
+        };
     }
 
     /**
