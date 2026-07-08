@@ -26,6 +26,8 @@
 namespace mod_bigbluebuttonbn;
 
 use mod_bigbluebuttonbn\test\testcase_helper_trait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Meeting tests class.
@@ -34,9 +36,8 @@ use mod_bigbluebuttonbn\test\testcase_helper_trait;
  * @copyright 2018 - present, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
- * @covers \mod_bigbluebuttonbn\meeting
- * @coversDefaultClass \mod_bigbluebuttonbn\meeting
  */
+#[CoversClass(meeting::class)]
 final class meeting_test extends \advanced_testcase {
     use testcase_helper_trait;
 
@@ -113,13 +114,10 @@ final class meeting_test extends \advanced_testcase {
     /**
      * Test that create meeing is working for all types.
      *
-     * @dataProvider get_instance_types_meeting_info
      * @param int $type
      * @param string|null $groupname
-     * @covers ::create_meeting
-     * @covers ::create_meeting_data
-     * @covers ::create_meeting_metadata
      */
+    #[DataProvider('get_instance_types_meeting_info')]
     public function test_create_meeting(int $type, ?string $groupname, $groupmode, $canjoin): void {
         $this->resetAfterTest();
         [$meeting, $useringroup, $usernotingroup, $groupid, $activity] =
@@ -138,10 +136,8 @@ final class meeting_test extends \advanced_testcase {
      *
      * @param int $type
      * @param string|null $groupname
-     * @dataProvider get_instance_types_meeting_info
-     * @covers ::get_meeting_info
-     * @covers ::do_get_meeting_info
      */
+    #[DataProvider('get_instance_types_meeting_info')]
     public function test_get_meeting_info(int $type, ?string $groupname, $groupmode, $canjoin): void {
         $this->resetAfterTest();
         [$meeting, $useringroup, $usernotingroup, $groupid, $activity] = $this->prepare_meeting($type, $groupname);
@@ -176,9 +172,8 @@ final class meeting_test extends \advanced_testcase {
      * @param string|null $groupname
      * @param int $groupmode
      * @param array $canjoin
-     * @dataProvider get_instance_types_meeting_info
-     * @covers ::can_join
      */
+    #[DataProvider('get_instance_types_meeting_info')]
     public function test_can_join(int $type, ?string $groupname, int $groupmode, array $canjoin): void {
         $this->resetAfterTest();
         [$meeting, $useringroup, $usernotingroup, $groupid, $activity] = $this->prepare_meeting($type, $groupname, $groupmode);
@@ -204,9 +199,8 @@ final class meeting_test extends \advanced_testcase {
      * @param int $groupmode
      * @param array $canjoin
      * @param array $dates
-     * @dataProvider get_data_can_join_with_dates
-     * @covers ::can_join
      */
+    #[DataProvider('get_data_can_join_with_dates')]
     public function test_can_join_with_dates(int $type, ?string $groupname, int $groupmode, array $canjoin, array $dates): void {
         // Apply the data provider relative values to now.
         array_walk($dates, function(&$val) {
@@ -232,9 +226,6 @@ final class meeting_test extends \advanced_testcase {
 
     /**
      * Test can join is working if the "Wait for moderator to join" setting is set and a moderator has not yet joined.
-     *
-     * @covers ::join
-     * @covers ::join_meeting
      */
     public function test_join_wait_for_moderator_not_joined(): void {
         $this->resetAfterTest();
@@ -265,9 +256,6 @@ final class meeting_test extends \advanced_testcase {
 
     /**
      * Test can join is working if the "Wait for moderator to join" setting is set and a moderator has already joined.
-     *
-     * @covers ::join
-     * @covers ::join_meeting
      */
     public function test_join_wait_for_moderator_is_joined(): void {
         $this->resetAfterTest();
@@ -314,9 +302,6 @@ final class meeting_test extends \advanced_testcase {
 
     /**
      * Test can join is working if the "user limit" setting is set and reached.
-     *
-     * @covers ::join
-     * @covers ::join_meeting
      */
     public function test_join_user_limit_reached(): void {
         $this->resetAfterTest();
@@ -362,8 +347,6 @@ final class meeting_test extends \advanced_testcase {
 
     /**
      * Test that attendees returns the right list of attendees
-     *
-     * @covers ::get_attendees
      */
     public function test_get_attendees(): void {
         $this->resetAfterTest();
@@ -383,8 +366,6 @@ final class meeting_test extends \advanced_testcase {
 
     /**
      * Test that attendees returns the right list of attendees
-     *
-     * @covers ::get_attendees
      */
     public function test_participant_count(): void {
         $this->resetAfterTest();
@@ -412,6 +393,47 @@ final class meeting_test extends \advanced_testcase {
         $this->assertEquals(3, $meetinginfo->totalusercount);
         $this->assertEquals(1, $meetinginfo->moderatorcount);
     }
+
+    /**
+     * Test that join_meeting recovers a missing recording row when a prior join attempt
+     * failed after BigBlueButton created the meeting but before the database insert completed.
+     */
+    public function test_join_meeting_recovers_missing_recording_row(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $bbbgenerator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+
+        // Create a recorded activity.
+        $activity = $bbbgenerator->create_instance([
+            'course' => $this->get_course()->id,
+            'record' => 1,
+        ]);
+        $instance = instance::get_from_instanceid($activity->id);
+
+        // Simulate the partial failure: BigBlueButton has the meeting on its side (the create
+        // API call succeeded) but no recording row was written to Moodle's database (the DB
+        // insert never ran because the PHP process failed between the two operations).
+        $bbbgenerator->create_meeting(['instanceid' => $instance->get_instance_id()]);
+
+        $this->assertFalse(
+            $DB->record_exists('bigbluebuttonbn_recordings', ['bigbluebuttonbnid' => $activity->id]),
+            'No recording row should exist before join_meeting() is called'
+        );
+
+        // The user retries joining. join_meeting() detects the meeting is already running on
+        // BigBlueButton and should recover the missing recording row using the internalMeetingID
+        // returned by getMeetingInfo.
+        meeting::join_meeting($instance, logger::ORIGIN_BASE);
+
+        $this->assertTrue(
+            $DB->record_exists('bigbluebuttonbn_recordings', ['bigbluebuttonbnid' => $activity->id]),
+            'Recording row should have been created by the join_meeting() recovery logic'
+        );
+    }
+
     /**
      * Send a join meeting API CALL
      *
@@ -493,8 +515,6 @@ final class meeting_test extends \advanced_testcase {
 
     /**
      * Test process_meeting_events.
-     *
-     * @covers ::meeting_events
      */
     public function test_process_meeting_events(): void {
         global $DB;
