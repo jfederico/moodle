@@ -190,6 +190,7 @@ abstract class proxy_base {
             // for example.
         }
         $curl = new curl();
+        $curl->setopt(['CURLOPT_TIMEOUT' => 30]);
         return $curl->get(self::action_url($action, $data, $metadata, $instanceid));
     }
 
