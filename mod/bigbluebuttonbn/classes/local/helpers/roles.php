@@ -207,6 +207,7 @@ class roles {
      * @return array $data
      */
     public static function get_participant_data(context $context, ?stdClass $bbactivity = null) {
+        $coursecontext = $context->get_course_context();
         $data = [
             'all' => [
                 'name' => get_string('mod_form_field_participant_list_type_all', 'bigbluebuttonbn'),
@@ -220,15 +221,72 @@ class roles {
         $data['user'] = [
             'name' => get_string('mod_form_field_participant_list_type_user', 'bigbluebuttonbn'),
             'children' => [],
+            'loaded' => false,
         ];
 
-        if (empty($bbactivity)) {
-            return $data;
-        }
-
-        $data['user']['children'] = self::get_users_array($context, $bbactivity);
+        $rules = self::get_participant_list($bbactivity, $coursecontext);
+        $data['user']['children'] = self::get_selected_users_array($coursecontext, $rules, $bbactivity);
 
         return $data;
+    }
+
+    /**
+     * Returns selected users from participant rules wrapped for html select element.
+     *
+     * @param context_course $context
+     * @param array $rules
+     * @param null|stdClass $bbactivity
+     * @return array
+     */
+    protected static function get_selected_users_array(context_course $context, array $rules, ?stdClass $bbactivity = null): array {
+        global $CFG, $USER;
+
+        require_once($CFG->dirroot . '/user/lib.php');
+
+        $selecteduserids = [];
+        foreach ($rules as $rule) {
+            if (($rule['selectiontype'] ?? '') !== 'user' || empty($rule['selectionid'])) {
+                continue;
+            }
+            $selecteduserids[(int) $rule['selectionid']] = (int) $rule['selectionid'];
+        }
+
+        if (empty($selecteduserids)) {
+            return [];
+        }
+
+        $users = \user_get_users_by_id(array_values($selecteduserids));
+        if (empty($users)) {
+            return [];
+        }
+
+        $course = get_course($context->instanceid);
+        $groupmode = groups_get_course_groupmode($course);
+        if ($bbactivity) {
+            [, $cm] = get_course_and_cm_from_instance($bbactivity->id, 'bigbluebuttonbn');
+            $groupmode = groups_get_activity_groupmode($cm);
+        }
+
+        $allowedgroups = null;
+        if ($groupmode == SEPARATEGROUPS && !has_capability('moodle/site:accessallgroups', $context)) {
+            $allowedgroups = array_keys(groups_get_all_groups($course->id, $USER->id));
+        }
+
+        $selectedusers = [];
+        foreach ($users as $user) {
+            if (!is_enrolled($context, $user->id, '', true)) {
+                continue;
+            }
+            if ($allowedgroups !== null) {
+                $usergroups = array_keys(groups_get_all_groups($course->id, $user->id));
+                if (empty(array_intersect($allowedgroups, $usergroups))) {
+                    continue;
+                }
+            }
+            $selectedusers[$user->id] = ['id' => $user->id, 'name' => fullname($user)];
+        }
+
+        return $selectedusers;
     }
 
     /**

@@ -122,6 +122,22 @@ export const completionValidate = (bigbluebuttonbnid) => fetchMany([
 
 
 /**
+ * Fetch users for the participant selector in the activity form.
+ *
+ * @param {number} courseid
+ * @returns {Promise}
+ */
+export const getParticipantSelectionUsers = (courseid) => fetchMany([
+    {
+        methodname: 'mod_bigbluebuttonbn_get_participant_selection_users',
+        args: {
+            courseid
+        },
+    }
+])[0];
+
+
+/**
  * Fetch meeting info for the specified meeting.
  *
  * @param {number} bigbluebuttonbnid
