@@ -134,6 +134,66 @@ final class meeting_test extends \advanced_testcase {
     }
 
     /**
+     * Test that create_meeting() does not insert a duplicate recording row when called more than
+     * once for the same instance/group, e.g. as could previously happen when two near-simultaneous
+     * join requests both reached create_meeting() before either had inserted its row (MDL-89119).
+     *
+     * @covers ::create_meeting
+     */
+    public function test_create_meeting_does_not_duplicate_recording(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $bbbgenerator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+        $activity = $bbbgenerator->create_instance([
+            'course' => $this->get_course()->id,
+            'type' => instance::TYPE_ALL,
+            'record' => 1,
+        ]);
+        $instance = instance::get_from_instanceid($activity->id);
+        $meeting = new meeting($instance);
+
+        // Simulate two requests both deciding the meeting needs to be created, e.g. because
+        // both saw an empty createtime before either had a chance to create the meeting.
+        $meeting->create_meeting();
+        $meeting->create_meeting();
+
+        $this->assertEquals(
+            1,
+            recording::count_records(['bigbluebuttonbnid' => $activity->id])
+        );
+    }
+
+    /**
+     * Test that join_meeting() does not create a duplicate recording row when called more than
+     * once in a row for a session that is not yet running, mirroring two near-simultaneous join
+     * requests for the same session (MDL-89119).
+     *
+     * @covers ::join_meeting
+     */
+    public function test_join_meeting_does_not_duplicate_recording(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $bbbgenerator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+        $student = $this->getDataGenerator()->create_and_enrol($this->get_course());
+        $activity = $bbbgenerator->create_instance([
+            'course' => $this->get_course()->id,
+            'type' => instance::TYPE_ALL,
+            'record' => 1,
+        ]);
+        $instance = instance::get_from_instanceid($activity->id);
+
+        $this->setUser($student);
+        // Neither request finds a running meeting, so both would previously attempt to create it.
+        meeting::join_meeting($instance);
+        meeting::join_meeting($instance);
+
+        $this->assertEquals(
+            1,
+            recording::count_records(['bigbluebuttonbnid' => $activity->id])
+        );
+    }
+
+    /**
      * Test for get meeting info for all types
      *
      * @param int $type
