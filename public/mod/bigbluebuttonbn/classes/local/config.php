@@ -16,7 +16,9 @@
 
 namespace mod_bigbluebuttonbn\local;
 
+use context;
 use mod_bigbluebuttonbn\instance;
+use mod_bigbluebuttonbn\local\config\resolver;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\recording;
 
@@ -145,11 +147,22 @@ class config {
     /**
      * Returns value for an specific setting.
      *
+     * When a context is supplied (or the current request has an active tenant), the config
+     * provider addons contributed by enabled bbbext subplugins are consulted first, so a
+     * tenant may override the site-global value. When no provider overrides the setting, the
+     * value falls back to the site-global configuration and then to the built-in default.
+     *
      * @param string $setting
+     * @param context|null $context context whose tenant should resolve the value; null uses the current tenant.
      * @return string
      */
-    public static function get(string $setting): string {
+    public static function get(string $setting, ?context $context = null): string {
         global $CFG;
+        // Per-tenant override provided by a bbbext config provider addon (Moodle Workplace), if any.
+        $override = resolver::resolve_setting($setting, $context);
+        if ($override !== null) {
+            return (string) $override;
+        }
         if (isset($CFG->bigbluebuttonbn[$setting])) {
             return (string) $CFG->bigbluebuttonbn[$setting];
         }

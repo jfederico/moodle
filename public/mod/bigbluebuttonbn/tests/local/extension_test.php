@@ -86,7 +86,10 @@ final class extension_test extends \advanced_testcase {
             },
             $allfoundinstances
         );
-        $this->assertEquals($extensionclasses, $foundclasses);
+        // Compare by value: the array keys are internal sort-order indices that shift when
+        // additional bbbext subplugins (e.g. bbbext_workplace) are installed, and are not
+        // part of the contract - callers iterate the values in order.
+        $this->assertEquals(array_values($extensionclasses), array_values($foundclasses));
     }
 
     /**

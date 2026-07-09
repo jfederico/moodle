@@ -16,8 +16,11 @@
 
 namespace mod_bigbluebuttonbn\local\proxy;
 
+use context;
 use mod_bigbluebuttonbn\extension;
+use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
+use mod_bigbluebuttonbn\local\config\resolver;
 use mod_bigbluebuttonbn\local\exceptions\bigbluebutton_exception;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\plugin;
@@ -61,7 +64,12 @@ abstract class proxy_base {
         array $metadata = [],
         ?int $instanceid = null
     ): string {
-        $baseurl = self::sanitized_url() . $action . '?';
+        // Resolve the tenant's context from the instance so the server URL, shared secret and
+        // checksum are computed against the correct (per-tenant) server. Only bother deriving
+        // the context when a configuration provider could actually act on it.
+        $context = resolver::is_active() ? self::context_from_instanceid($instanceid) : null;
+
+        $baseurl = self::sanitized_url($context) . $action . '?';
         ['data' => $additionaldata, 'metadata' => $additionalmetadata] =
             extension::action_url_addons($action, $data, $metadata, $instanceid);
         $data = array_merge($data, $additionaldata ?? []);
@@ -71,17 +79,32 @@ abstract class proxy_base {
             return 'meta_' . $k;
         }, array_keys($metadata)), $metadata);
         $params = http_build_query($data + $metadata);
-        $checksum = self::get_checksum($action, $params);
+        $checksum = self::get_checksum($action, $params, $context);
         return $baseurl . $params . '&checksum=' . $checksum;
+    }
+
+    /**
+     * Resolve the module context for a BigBlueButton instance id, when available.
+     *
+     * @param int|null $instanceid the bigbluebuttonbn instance id.
+     * @return context|null the module context, or null when it cannot be resolved.
+     */
+    protected static function context_from_instanceid(?int $instanceid): ?context {
+        if (empty($instanceid)) {
+            return null;
+        }
+        $instance = instance::get_from_instanceid($instanceid);
+        return $instance ? $instance->get_context() : null;
     }
 
     /**
      * Makes sure the url used doesn't is in the format required.
      *
+     * @param context|null $context context whose tenant should resolve the server URL.
      * @return string
      */
-    protected static function sanitized_url(): string {
-        $serverurl = trim(config::get('server_url'));
+    protected static function sanitized_url(?context $context = null): string {
+        $serverurl = trim(config::get('server_url', $context));
         if (PHPUNIT_TEST) {
             $serverurl = (new moodle_url(TEST_MOD_BIGBLUEBUTTONBN_MOCK_SERVER))->out(false);
         }
@@ -97,10 +120,11 @@ abstract class proxy_base {
     /**
      * Makes sure the shared_secret used doesn't have trailing white characters.
      *
+     * @param context|null $context context whose tenant should resolve the shared secret.
      * @return string
      */
-    protected static function sanitized_secret(): string {
-        return trim(config::get('shared_secret'));
+    protected static function sanitized_secret(?context $context = null): string {
+        return trim(config::get('shared_secret', $context));
     }
 
     /**
@@ -198,9 +222,10 @@ abstract class proxy_base {
      *
      * @param string $action
      * @param string $params
+     * @param context|null $context context whose tenant should resolve the secret and algorithm.
      * @return string
      */
-    public static function get_checksum(string $action, string $params): string {
-        return hash(config::get('checksum_algorithm'), $action . $params . self::sanitized_secret());
+    public static function get_checksum(string $action, string $params, ?context $context = null): string {
+        return hash(config::get('checksum_algorithm', $context), $action . $params . self::sanitized_secret($context));
     }
 }

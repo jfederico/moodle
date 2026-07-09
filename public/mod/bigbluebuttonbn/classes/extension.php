@@ -19,6 +19,7 @@ use cache;
 use cm_info;
 use mod_bigbluebuttonbn\local\extension\action_url_addons;
 use mod_bigbluebuttonbn\local\extension\broker_meeting_events_addons;
+use mod_bigbluebuttonbn\local\extension\config_provider_addon;
 use mod_bigbluebuttonbn\local\extension\custom_completion_addons;
 use mod_bigbluebuttonbn\local\extension\mod_form_addons;
 use mod_bigbluebuttonbn\local\extension\mod_instance_helper;
@@ -148,6 +149,18 @@ class extension {
         }
         ksort($result);
         return $result;
+    }
+
+    /**
+     * Get all config provider addon class instances.
+     *
+     * These are consulted by {@see \mod_bigbluebuttonbn\local\config\resolver} to resolve
+     * per-tenant BigBlueButton configuration.
+     *
+     * @return config_provider_addon[] the enabled config provider addons, in subplugin order.
+     */
+    public static function config_provider_addon_instances(): array {
+        return self::get_instances_implementing(config_provider_addon::class);
     }
 
     /**

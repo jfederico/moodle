@@ -20,7 +20,10 @@ use cache;
 use context;
 use context_course;
 use context_module;
+use context_system;
 use core\persistent;
+use mod_bigbluebuttonbn\local\config\resolver;
+use mod_bigbluebuttonbn\local\config\tenancy;
 use mod_bigbluebuttonbn\local\proxy\recording_proxy;
 use moodle_url;
 use stdClass;
@@ -708,6 +711,70 @@ class recording extends persistent {
     const DEFAULT_RECORDING_SORT = 'timecreated ASC';
 
     /**
+     * Group a set of recording rows by the tenant that owns their course.
+     *
+     * When no configuration provider is active (i.e. a standard single-tenant site) every
+     * recording is returned under the site tenant so the behaviour is identical to before
+     * multitenancy support was added.
+     *
+     * @param array $recordings recording rows, each with at least ->courseid and ->recordingid.
+     * @return array<int, string[]> map of tenant id => list of recordingids.
+     */
+    protected static function group_recordingids_by_tenant(array $recordings): array {
+        if (!resolver::is_active()) {
+            $ids = array_values(array_map(fn($recording) => $recording->recordingid, $recordings));
+            return $ids ? [tenancy::NO_TENANT => $ids] : [];
+        }
+        $groups = [];
+        $tenantbycourse = [];
+        foreach ($recordings as $recording) {
+            $courseid = (int) ($recording->courseid ?? 0);
+            if (!array_key_exists($courseid, $tenantbycourse)) {
+                $context = $courseid
+                    ? context_course::instance($courseid, IGNORE_MISSING)
+                    : context_system::instance();
+                $tenantbycourse[$courseid] = $context
+                    ? tenancy::get_tenant_id_for_context($context)
+                    : tenancy::NO_TENANT;
+            }
+            $groups[$tenantbycourse[$courseid]][] = $recording->recordingid;
+        }
+        return $groups;
+    }
+
+    /**
+     * Fetch recording metadata for a set of recording rows, querying each tenant's server in turn.
+     *
+     * @param array $recordings recording rows.
+     * @return array metadata indexed by recordingid.
+     */
+    protected static function fetch_recordings_grouped(array $recordings): array {
+        $metadatas = [];
+        foreach (self::group_recordingids_by_tenant($recordings) as $tenantid => $recordingids) {
+            $metadatas += resolver::run_for_tenant((int) $tenantid, function() use ($recordingids) {
+                return recording_proxy::fetch_recordings($recordingids);
+            });
+        }
+        return $metadatas;
+    }
+
+    /**
+     * Determine which of the given recordings could not be fetched, querying each tenant's server in turn.
+     *
+     * @param array $recordings recording rows.
+     * @return array list of recordingids not fetched from their server.
+     */
+    protected static function fetch_missing_recordings_grouped(array $recordings): array {
+        $failedids = [];
+        foreach (self::group_recordingids_by_tenant($recordings) as $tenantid => $recordingids) {
+            $failedids = array_merge($failedids, resolver::run_for_tenant((int) $tenantid, function() use ($recordingids) {
+                return recording_proxy::fetch_missing_recordings($recordingids);
+            }));
+        }
+        return $failedids;
+    }
+
+    /**
      * Fetch all records which match the specified parameters, including all metadata that relates to them.
      *
      * @param array $selects
@@ -729,14 +796,10 @@ class recording extends persistent {
             $recordingsort
         );
 
-        // Grab the recording IDs.
-        $recordingids = array_values(array_map(function ($recording) {
-            return $recording->recordingid;
-        }, $recordings));
-
-        // Fetch all metadata for these recordings.
-        $metadatas = recording_proxy::fetch_recordings($recordingids);
-        $failedids = recording_proxy::fetch_missing_recordings($recordingids);
+        // Fetch all metadata for these recordings, per tenant so each recording is queried
+        // against the BigBlueButton server that belongs to its tenant.
+        $metadatas = self::fetch_recordings_grouped($recordings);
+        $failedids = self::fetch_missing_recordings_grouped($recordings);
 
         // Return the instances.
         return array_filter(array_map(function ($recording) use ($metadatas, $withindays, $failedids) {
@@ -826,14 +889,15 @@ class recording extends persistent {
         $recordingcount = count($recordings);
         mtrace("=> Found {$recordingcount} recordings to query");
 
-        // Grab the recording IDs.
+        // Grab the recording IDs (indexed as the $recordings rows so array_search still works below).
         $recordingids = array_map(function($recording) {
             return $recording->recordingid;
         }, $recordings);
 
-        // Fetch all metadata for these recordings.
+        // Fetch all metadata for these recordings, per tenant so each recording is queried
+        // against the BigBlueButton server that belongs to its tenant.
         mtrace("=> Fetching recording metadata from server");
-        $metadatas = recording_proxy::fetch_recordings($recordingids);
+        $metadatas = self::fetch_recordings_grouped($recordings);
 
         $foundcount = 0;
         foreach ($metadatas as $recordingid => $metadata) {
