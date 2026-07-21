@@ -41,7 +41,7 @@ final class roles_test extends \advanced_testcase {
         $numteachers = 2;
         $groupsnum = 2;
 
-        list($course, $groups, $students, $teachers, $bbactivity, $roleids) =
+        [$course] =
             $this->setup_course_students_teachers(
                 (object) ['enablecompletion' => true, 'groupmode' => strval(VISIBLEGROUPS), 'groupmodeforce' => 1],
                 $numstudents, $numteachers, $groupsnum);
@@ -64,7 +64,7 @@ final class roles_test extends \advanced_testcase {
         $numteachers = 2;
         $groupsnum = 2;
 
-        [$course, $groups, $students, $teachers, $bbactivity, $roleids] =
+        [$course, , $students, $teachers, $bbactivity] =
             $this->setup_course_students_teachers(
                 (object) ['enablecompletion' => true, 'groupmode' => strval(VISIBLEGROUPS), 'groupmodeforce' => 1],
                 $numstudents, $numteachers, $groupsnum);

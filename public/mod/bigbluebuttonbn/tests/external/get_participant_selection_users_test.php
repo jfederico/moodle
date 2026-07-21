@@ -62,6 +62,43 @@ final class get_participant_selection_users_test extends \core_external\tests\ex
     }
 
     /**
+     * Test activity separate groups restricts the users returned by the service.
+     */
+    public function test_execute_with_activity_separate_groups(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['groupmode' => NOGROUPS, 'groupmodeforce' => 0]);
+        $groupone = $generator->create_group(['courseid' => $course->id]);
+        $grouptwo = $generator->create_group(['courseid' => $course->id]);
+        $teacher = $generator->create_and_enrol($course, 'editingteacher');
+        $visibleuser = $generator->create_and_enrol($course, 'student');
+        $hiddenuser = $generator->create_and_enrol($course, 'student');
+        $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $visibleuser->id]);
+        $generator->create_group_member(['groupid' => $grouptwo->id, 'userid' => $hiddenuser->id]);
+        $activity = $generator->create_module('bigbluebuttonbn', [
+            'course' => $course->id,
+            'groupmode' => SEPARATEGROUPS,
+        ]);
+        $editingteacherrole = $DB->get_record('role', ['shortname' => 'editingteacher'], '*', MUST_EXIST);
+        role_change_permission(
+            $editingteacherrole->id,
+            \context_course::instance($course->id),
+            'moodle/site:accessallgroups',
+            CAP_PREVENT
+        );
+        $this->setUser($teacher);
+
+        $response = $this->get_participant_selection_users($course->id, $activity->id);
+        $userids = array_column($response['users'], 'id');
+
+        $this->assertContains((int) $visibleuser->id, $userids);
+        $this->assertNotContains((int) $hiddenuser->id, $userids);
+    }
+
+    /**
      * Test execute API call without permission to add an activity.
      */
     public function test_execute_without_addinstance_capability(): void {

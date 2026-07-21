@@ -132,6 +132,7 @@ $string['config_participant'] = 'Participants';
 $string['config_participant_description'] = 'These settings define the default role for participants.';
 $string['config_participant_moderator_default'] = 'Moderator';
 $string['config_participant_moderator_default_description'] = 'This rule is used by default when a new room is added.';
+$string['participantselectionusersloaded'] = '{$a} users loaded.';
 $string['config_poll_interval'] = 'Poll interval (in seconds) to refresh the room\'s status';
 $string['config_poll_interval_description'] = 'The poll interval must be at least 2 seconds. If necessary, you can lower the load on the remote server by increasing the interval.';
 $string['config_presentation_default'] = 'Default presentation file';

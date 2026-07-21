@@ -38,6 +38,7 @@ const ELEMENT_SELECTOR = {
     participantTable: () => document.getElementById('participant_list_table'),
     participantSelectionType: () => document.getElementsByName('bigbluebuttonbn_participant_selection_type')[0],
     participantSelection: () => document.getElementsByName('bigbluebuttonbn_participant_selection')[0],
+    participantSelectionStatus: () => document.querySelector('[data-participant-selection-status]'),
     participantAddButton: () => document.getElementsByName('bigbluebuttonbn_participant_selection_add')[0],
 };
 /**
@@ -70,7 +71,7 @@ export const init = (info) => {
 
     ELEMENT_SELECTOR.participantSelectionType().addEventListener('change', (e) => {
         const currentTypeSelect = e.target;
-        updateSelectionFromType(currentTypeSelect, info.courseId).catch(Notification.exception);
+        updateSelectionFromType(currentTypeSelect, info.courseId, info.bigbluebuttonbnId).catch(Notification.exception);
     });
 
     ELEMENT_SELECTOR.participantAddButton().addEventListener('click', (e) => {
@@ -204,22 +205,31 @@ const participantListInit = async () => {
  * @param {object} participantData
  * @param {HTMLElement} participantDataNode
  * @param {number} courseId
- * @returns {Promise<void>}
+ * @param {number} bigbluebuttonbnId
+ * @param {HTMLSelectElement} participantSelect
+ * @returns {Promise<boolean>}
  */
-const loadParticipantUsers = async (participantData, participantDataNode, courseId) => {
+const loadParticipantUsers = async (participantData, participantDataNode, courseId, bigbluebuttonbnId, participantSelect) => {
     if (Array.isArray(participantData.user.children)) {
         participantData.user.children = {};
     }
     if (participantData.user.loaded) {
-        return;
+        return false;
     }
 
-    const response = await getParticipantSelectionUsers(courseId);
-    response.users.forEach(user => {
-        participantData.user.children[user.id] = user;
-    });
-    participantData.user.loaded = true;
-    participantDataNode.dataset.participantData = JSON.stringify(participantData);
+    participantSelect.setAttribute('aria-busy', 'true');
+    try {
+        const response = await getParticipantSelectionUsers(courseId, bigbluebuttonbnId);
+        response.users.forEach(user => {
+            participantData.user.children[user.id] = user;
+        });
+        participantData.user.loaded = true;
+        participantDataNode.dataset.participantData = JSON.stringify(participantData);
+        return true;
+    } catch (error) {
+        participantSelect.setAttribute('aria-busy', 'false');
+        throw error;
+    }
 };
 
 /**
@@ -373,8 +383,9 @@ const participantAddFromCurrentSelection = () => {
  *
  * @param {HTMLNode} currentTypeSelect
  * @param {number} courseId
+ * @param {number} bigbluebuttonbnId
  */
-const updateSelectionFromType = async (currentTypeSelect, courseId) => {
+const updateSelectionFromType = async (currentTypeSelect, courseId, bigbluebuttonbnId) => {
     const createNewOption = (selectItem, label, value) => {
         const option = document.createElement('option');
         option.text = label;
@@ -385,6 +396,7 @@ const updateSelectionFromType = async (currentTypeSelect, courseId) => {
 
     const participantDataNode = ELEMENT_SELECTOR.participantData();
     const participantData = JSON.parse(participantDataNode.dataset.participantData);
+    const participantSelectionStatus = ELEMENT_SELECTOR.participantSelectionStatus();
     // Clear all selection items.
     const participantSelect = ELEMENT_SELECTOR.participantSelection();
     while (participantSelect.firstChild) {
@@ -392,9 +404,12 @@ const updateSelectionFromType = async (currentTypeSelect, courseId) => {
     }
     // Add options depending on the selection.
     if (currentTypeSelect.selectedIndex !== -1) {
+        let usersLoaded = false;
         if (currentTypeSelect.value === 'user') {
             participantSelect.disabled = true;
-            await loadParticipantUsers(participantData, participantDataNode, courseId);
+            usersLoaded = await loadParticipantUsers(
+                participantData, participantDataNode, courseId, bigbluebuttonbnId, participantSelect
+            );
         }
 
         const options = Object.values(participantData[currentTypeSelect.value].children);
@@ -407,6 +422,13 @@ const updateSelectionFromType = async (currentTypeSelect, courseId) => {
             participantSelect.disabled = true;
         } else {
             participantSelect.disabled = false;
+        }
+
+        if (usersLoaded) {
+            participantSelect.setAttribute('aria-busy', 'false');
+            participantSelectionStatus.textContent = await getString(
+                'participantselectionusersloaded', 'mod_bigbluebuttonbn', options.length
+            );
         }
     }
 };

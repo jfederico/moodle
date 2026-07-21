@@ -4,6 +4,12 @@
 
 ### Added
 
+- Added the `mod_bigbluebuttonbn_get_participant_selection_users` web service for loading users in the activity
+  participant selector. The `roles::get_participant_data()` return value now includes `user.loaded` to indicate
+  whether the complete user list has been loaded.
+
+  For more information see [MDL-87298](https://tracker.moodle.org/browse/MDL-87298)
+
 - Add activity_dates class to BigblueButton module.
 
   For more information see [MDL-83889](https://tracker.moodle.org/browse/MDL-83889)

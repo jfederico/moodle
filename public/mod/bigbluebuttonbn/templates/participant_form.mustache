@@ -36,6 +36,7 @@
     {{#selectionParticipant}}
         {{> mod_bigbluebuttonbn/participant_single_select}}
     {{/selectionParticipant}}
+    <div class="sr-only" aria-atomic="true" aria-live="polite" data-participant-selection-status></div>
     {{#action}}
         <button type="submit" class="btn {{#primary}}btn-primary{{/primary}}{{^primary}}btn-secondary{{/primary}}"
         id="{{id}}"

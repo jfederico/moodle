@@ -125,13 +125,15 @@ export const completionValidate = (bigbluebuttonbnid) => fetchMany([
  * Fetch users for the participant selector in the activity form.
  *
  * @param {number} courseid
+ * @param {number} bigbluebuttonbnid
  * @returns {Promise}
  */
-export const getParticipantSelectionUsers = (courseid) => fetchMany([
+export const getParticipantSelectionUsers = (courseid, bigbluebuttonbnid = 0) => fetchMany([
     {
         methodname: 'mod_bigbluebuttonbn_get_participant_selection_users',
         args: {
-            courseid
+            courseid,
+            bigbluebuttonbnid,
         },
     }
 ])[0];
