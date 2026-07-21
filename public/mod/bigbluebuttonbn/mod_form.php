@@ -104,6 +104,7 @@ class mod_bigbluebuttonbn_mod_form extends moodleform_mod {
         $jsvars = [
             'instanceTypeDefault' => array_keys($instancetyperofiles)[0],
             'courseId' => $course->id,
+            'bigbluebuttonbnId' => $bigbluebuttonbn->id ?? 0,
         ];
 
         // Now add the instance type profiles to the form as a html hidden field.

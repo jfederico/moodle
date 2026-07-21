@@ -43,6 +43,7 @@ class get_participant_selection_users extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'courseid' => new external_value(PARAM_INT, 'Course id'),
+            'bigbluebuttonbnid' => new external_value(PARAM_INT, 'BigBlueButton activity id', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -50,12 +51,16 @@ class get_participant_selection_users extends external_api {
      * Get users available for the participant selector.
      *
      * @param int $courseid Course id
+     * @param int $bigbluebuttonbnid BigBlueButton activity id
      * @return array
      * @throws restricted_context_exception
      */
-    public static function execute(int $courseid): array {
-        ['courseid' => $courseid] = self::validate_parameters(self::execute_parameters(), [
+    public static function execute(int $courseid, int $bigbluebuttonbnid = 0): array {
+        global $DB;
+
+        ['courseid' => $courseid, 'bigbluebuttonbnid' => $bigbluebuttonbnid] = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid,
+            'bigbluebuttonbnid' => $bigbluebuttonbnid,
         ]);
 
         $context = context_course::instance($courseid);
@@ -65,8 +70,16 @@ class get_participant_selection_users extends external_api {
             throw new restricted_context_exception();
         }
 
+        $bigbluebuttonbn = null;
+        if ($bigbluebuttonbnid) {
+            $bigbluebuttonbn = $DB->get_record('bigbluebuttonbn', ['id' => $bigbluebuttonbnid], '*', MUST_EXIST);
+            if ($bigbluebuttonbn->course != $courseid) {
+                throw new \invalid_parameter_exception('The activity does not belong to the specified course.');
+            }
+        }
+
         return [
-            'users' => array_values(roles::get_users_array($context)),
+            'users' => array_values(roles::get_users_array($context, $bigbluebuttonbn)),
         ];
     }
 
