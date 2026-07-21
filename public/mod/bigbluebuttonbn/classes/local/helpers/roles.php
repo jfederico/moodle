@@ -203,7 +203,8 @@ class roles {
      *
      * @param context $context
      * @param null|stdClass $bbactivity
-     * @return array $data
+     * @return array{all: array{name: string, children: array}, role: array{name: string, children: array},
+     *     user: array{name: string, children: array, loaded: bool}}
      */
     public static function get_participant_data(context $context, ?stdClass $bbactivity = null) {
         $coursecontext = $context->get_course_context();
@@ -238,7 +239,7 @@ class roles {
      * @return array
      */
     protected static function get_selected_users_array(course $context, array $rules, ?stdClass $bbactivity = null): array {
-        global $CFG, $USER;
+        global $CFG, $DB, $USER;
 
         require_once($CFG->dirroot . '/user/lib.php');
 
@@ -271,16 +272,25 @@ class roles {
             $allowedgroups = array_keys(groups_get_all_groups($course->id, $USER->id));
         }
 
+        $visibleuserids = null;
+        if ($allowedgroups !== null) {
+            [$groupsql, $groupparams] = $DB->get_in_or_equal($allowedgroups, SQL_PARAMS_NAMED, 'group');
+            [$usersql, $userparams] = $DB->get_in_or_equal(array_keys($users), SQL_PARAMS_NAMED, 'user');
+            $visibleuserids = $DB->get_fieldset_select(
+                'groups_members',
+                'userid',
+                "groupid $groupsql AND userid $usersql",
+                $groupparams + $userparams
+            );
+        }
+
         $selectedusers = [];
         foreach ($users as $user) {
             if (!is_enrolled($context, $user->id, '', true)) {
                 continue;
             }
-            if ($allowedgroups !== null) {
-                $usergroups = array_keys(groups_get_all_groups($course->id, $user->id));
-                if (empty(array_intersect($allowedgroups, $usergroups))) {
-                    continue;
-                }
+            if ($visibleuserids !== null && !in_array($user->id, $visibleuserids)) {
+                continue;
             }
             $selectedusers[$user->id] = ['id' => $user->id, 'name' => fullname($user)];
         }
