@@ -28,6 +28,17 @@ use mod_bigbluebuttonbn\extension;
  */
 class bbbext extends base {
     /**
+     * Resolve the optional subplugin lifecycle callback class.
+     *
+     * @param string $pluginname subplugin shortname
+     * @return string|null fully-qualified callback class name
+     */
+    private static function get_plugininfo_callbacks_class(string $pluginname): ?string {
+        $classname = extension::BBB_EXTENSION_PLUGIN_NAME . '_' . $pluginname . '\\plugininfo_callbacks';
+        return class_exists($classname) ? $classname : null;
+    }
+
+    /**
      * Check if BigBlueButton plugin is enabled
      * @return bool
      */
@@ -66,6 +77,91 @@ class bbbext extends base {
     }
 
     /**
+     * Return the message that should block enabling a subplugin, if any.
+     *
+     * Subplugins can expose a static plugininfo_callbacks::before_enable() method
+     * that returns either null (enablement is allowed) or a warning message
+     * string that explains why the enable action must be blocked.
+     *
+     * @param string $pluginname subplugin shortname
+     * @return string|null
+     */
+    public static function get_enable_blocking_message(string $pluginname): ?string {
+        $callbackclass = self::get_plugininfo_callbacks_class($pluginname);
+        if ($callbackclass === null || !method_exists($callbackclass, 'before_enable')) {
+            return null;
+        }
+
+        $message = $callbackclass::before_enable();
+        if (!is_string($message) || $message === '') {
+            return null;
+        }
+
+        return $message;
+    }
+
+    /**
+     * Return non-blocking warning messages for the manage-extensions page.
+     *
+     * Subplugins can expose a static plugininfo_callbacks::management_warnings()
+     * method that returns a list of warning strings to be rendered by the core
+     * extension manager.
+     *
+     * @param string|null $pluginname optional subplugin shortname
+     * @return string[]
+     */
+    public static function get_management_warnings(?string $pluginname = null): array {
+        $pluginnames = [];
+        if ($pluginname !== null) {
+            $pluginnames[] = $pluginname;
+        } else {
+            $plugins = \core_plugin_manager::instance()->get_installed_plugins(extension::BBB_EXTENSION_PLUGIN_NAME);
+            $pluginnames = array_keys($plugins ?: []);
+        }
+
+        $warnings = [];
+        foreach ($pluginnames as $currentplugin) {
+            $callbackclass = self::get_plugininfo_callbacks_class($currentplugin);
+            if ($callbackclass === null || !method_exists($callbackclass, 'management_warnings')) {
+                continue;
+            }
+
+            $pluginwarnings = $callbackclass::management_warnings();
+            if (!is_array($pluginwarnings)) {
+                continue;
+            }
+
+            foreach ($pluginwarnings as $warning) {
+                if (is_string($warning) && $warning !== '') {
+                    $warnings[] = $warning;
+                }
+            }
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * Notify enabled subplugins that a subplugin was disabled.
+     *
+     * Subplugins can expose a static plugininfo_callbacks::after_plugin_disabled()
+     * method to respond when a required subplugin is disabled.
+     *
+     * @param string $pluginname disabled subplugin shortname
+     * @return void
+     */
+    private static function notify_plugin_disabled(string $pluginname): void {
+        foreach (self::get_enabled_plugins() as $enabledplugin) {
+            $callbackclass = self::get_plugininfo_callbacks_class($enabledplugin);
+            if ($callbackclass === null || !method_exists($callbackclass, 'after_plugin_disabled')) {
+                continue;
+            }
+
+            $callbackclass::after_plugin_disabled($pluginname);
+        }
+    }
+
+    /**
      * Enable the plugin
      *
      * @param string $pluginname
@@ -79,6 +175,11 @@ class bbbext extends base {
         if (!self::is_bbb_enabled()) {
             return false;
         }
+
+        if ($enabled && self::get_enable_blocking_message($pluginname) !== null) {
+            return false;
+        }
+
         $plugin = extension::BBB_EXTENSION_PLUGIN_NAME. '_' . $pluginname;
         $oldvalue = get_config($plugin, 'disabled');
         $disabled = !$enabled;
@@ -94,6 +195,9 @@ class bbbext extends base {
         if ($haschanged) {
             add_to_config_log('disabled', $oldvalue, $disabled, $plugin);
             \core_plugin_manager::reset_caches();
+            if ($disabled) {
+                self::notify_plugin_disabled($pluginname);
+            }
         }
 
         return $haschanged;

@@ -18,6 +18,8 @@ namespace mod_bigbluebuttonbn\local\plugins;
 use cache_helper;
 use context_system;
 use core_component;
+use core\notification;
+use core\output\notification as output_notification;
 use core_plugin_manager;
 use flexible_table;
 use html_writer;
@@ -89,6 +91,12 @@ class admin_plugin_manager {
         global $OUTPUT, $CFG;
         require_once($CFG->libdir . '/tablelib.php');
         $this->print_header();
+
+        $class = \core_plugin_manager::resolve_plugininfo_class(extension::BBB_EXTENSION_PLUGIN_NAME);
+        foreach ($class::get_management_warnings() as $warning) {
+            echo $OUTPUT->notification($warning, output_notification::NOTIFY_WARNING);
+        }
+
         $table = new flexible_table(extension::BBB_EXTENSION_PLUGIN_NAME . 'pluginsadminttable');
         $table->define_baseurl($this->pageurl);
         $table->define_columns([
@@ -249,6 +257,12 @@ class admin_plugin_manager {
      */
     private function plugins_show(string $plugin): string {
         $class = \core_plugin_manager::resolve_plugininfo_class(extension::BBB_EXTENSION_PLUGIN_NAME);
+        $blockingmessage = $class::get_enable_blocking_message($plugin);
+        if ($blockingmessage !== null) {
+            notification::add($blockingmessage, notification::WARNING);
+            return 'view';
+        }
+
         $class::enable_plugin($plugin, true);
         cache_helper::purge_by_event('mod_bigbluebuttonbn/pluginenabledisabled');
         return 'view';
