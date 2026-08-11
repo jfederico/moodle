@@ -83,6 +83,42 @@ final class recording_test extends \advanced_testcase {
     }
 
     /**
+     * Test that an activity cannot contain duplicate original recording IDs.
+     */
+    public function test_unique_original_recordingid_per_activity(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+        $course = $this->get_course();
+        $activity = $generator->create_instance(['course' => $course->id]);
+        $otheractivity = $generator->create_instance(['course' => $course->id]);
+        $recordingid = 'duplicate-recording-id';
+
+        $recording = (object) [
+            'courseid' => $course->id,
+            'bigbluebuttonbnid' => $activity->id,
+            'groupid' => 0,
+            'recordingid' => $recordingid,
+            'headless' => false,
+            'imported' => recording::RECORDING_ORIGINAL,
+            'status' => recording::RECORDING_STATUS_AWAITING,
+        ];
+        $DB->insert_record('bigbluebuttonbn_recordings', $recording);
+
+        // Imported copies in other activities retain the remote recording ID.
+        $recording->bigbluebuttonbnid = $otheractivity->id;
+        $recording->imported = recording::RECORDING_IMPORTED;
+        $DB->insert_record('bigbluebuttonbn_recordings', $recording);
+
+        $recording->bigbluebuttonbnid = $activity->id;
+        $recording->imported = recording::RECORDING_ORIGINAL;
+        $this->expectException(\dml_write_exception::class);
+        $DB->insert_record('bigbluebuttonbn_recordings', $recording);
+    }
+
+    /**
      * Test get description
      *
      * @covers ::get_description

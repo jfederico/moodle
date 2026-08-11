@@ -102,6 +102,7 @@
       <INDEXES>
         <INDEX NAME="courseid" UNIQUE="false" FIELDS="courseid"/>
         <INDEX NAME="recordingid" UNIQUE="false" FIELDS="recordingid"/>
+        <INDEX NAME="bbb_rec_inst_rec_imp_ux" UNIQUE="true" FIELDS="bigbluebuttonbnid, recordingid, imported"/>
       </INDEXES>
     </TABLE>
   </TABLES>

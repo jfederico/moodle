@@ -45,6 +45,9 @@ class recording extends persistent {
     /** @var int Defines that the recording is not the original but an imported one */
     public const RECORDING_IMPORTED = 1;
 
+    /** @var int Defines that the recording is the original recording for an activity */
+    public const RECORDING_ORIGINAL = 0;
+
     /** @var int Defines that the list should include imported recordings */
     public const INCLUDE_IMPORTED_RECORDINGS = true;
 
@@ -433,7 +436,11 @@ class recording extends persistent {
         int $groupid
     ): void {
         global $DB;
-        if ($DB->record_exists(static::TABLE, ['recordingid' => $recordingid])) {
+        if ($DB->record_exists(static::TABLE, [
+            'bigbluebuttonbnid' => $bigbluebuttonbnid,
+            'recordingid' => $recordingid,
+            'imported' => self::RECORDING_ORIGINAL,
+        ])) {
             return;
         }
         try {

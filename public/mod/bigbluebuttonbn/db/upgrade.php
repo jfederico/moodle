@@ -108,6 +108,39 @@ function xmldb_bigbluebuttonbn_upgrade($oldversion = 0) {
         upgrade_mod_savepoint(true, 2026022600, 'bigbluebuttonbn');
     }
 
+    if ($oldversion < 2026042001) {
+        $table = new xmldb_table('bigbluebuttonbn_recordings');
+        $index = new xmldb_index(
+            'bbb_rec_inst_rec_imp_ux',
+            XMLDB_INDEX_UNIQUE,
+            ['bigbluebuttonbnid', 'recordingid', 'imported']
+        );
+
+        // Keep the oldest local row for each recording before enforcing the invariant.
+        $duplicates = $DB->get_records_sql(
+            "SELECT MIN(id) AS id, bigbluebuttonbnid, recordingid, imported
+               FROM {bigbluebuttonbn_recordings}
+              GROUP BY bigbluebuttonbnid, recordingid, imported
+             HAVING COUNT(id) > 1"
+        );
+        foreach ($duplicates as $duplicate) {
+            $records = $DB->get_records('bigbluebuttonbn_recordings', [
+                'bigbluebuttonbnid' => $duplicate->bigbluebuttonbnid,
+                'recordingid' => $duplicate->recordingid,
+                'imported' => $duplicate->imported,
+            ], 'id ASC');
+            unset($records[$duplicate->id]);
+            $DB->delete_records_list('bigbluebuttonbn_recordings', 'id', array_keys($records));
+        }
+
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Bigbluebuttonbn savepoint reached.
+        upgrade_mod_savepoint(true, 2026042001, 'bigbluebuttonbn');
+    }
+
     // Automatically generated Moodle v5.2.0 release upgrade line.
     // Put any upgrade step following this.
 
