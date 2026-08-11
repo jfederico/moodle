@@ -422,7 +422,7 @@ class recording extends persistent {
      * that was never inserted because a previous join attempt failed after the BBB create API call
      * (e.g. PHP timeout) but before the DB insert completed.
      *
-     * Safe to call concurrently: a duplicate-insert race is caught and silently ignored.
+     * Safe to call concurrently: a duplicate-insert race is ignored only after confirming the row exists.
      *
      * @param int $courseid
      * @param int $bigbluebuttonbnid
@@ -451,9 +451,15 @@ class recording extends persistent {
                 'groupid'           => $groupid,
             ]);
             $recording->create();
-        } catch (\Exception $e) {
-            // Concurrent insert from another request — row now exists, nothing to do.
-            debugging('BBB recording row concurrent insert: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        } catch (\dml_write_exception $e) {
+            // Only ignore a duplicate insert if another request created the row.
+            if (!$DB->record_exists(static::TABLE, [
+                'bigbluebuttonbnid' => $bigbluebuttonbnid,
+                'recordingid' => $recordingid,
+                'imported' => self::RECORDING_ORIGINAL,
+            ])) {
+                throw $e;
+            }
         }
     }
 
