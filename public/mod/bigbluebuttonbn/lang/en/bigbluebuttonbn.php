@@ -628,6 +628,7 @@ $string['notification_recording_ready_html'] = 'A recording is now available for
 $string['notification_recording_ready_plain'] = 'A recording is now available for the session in the BigBlueButton room {$a->name}. Go to {$a->link} to access the recording link.';
 $string['notification_recording_ready_subject'] = 'Recording available';
 
+$string['view_error_meeting_lock'] = 'This session is currently being created by another request. Please wait a moment and try again.';
 $string['view_error_meeting_not_running'] = 'Something went wrong; the session is not running.';
 $string['view_error_current_state_not_found'] = 'Current state was not found. The recording may have been deleted or the BigBlueButton server is not compatible with the action performed.';
 $string['view_error_action_not_completed'] = 'Action could not be completed';

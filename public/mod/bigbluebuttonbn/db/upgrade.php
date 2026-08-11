@@ -26,6 +26,7 @@
 
 use mod_bigbluebuttonbn\plugin;
 use mod_bigbluebuttonbn\local\config;
+use mod_bigbluebuttonbn\task\cleanup_duplicate_recordings_task;
 use mod_bigbluebuttonbn\task\upgrade_recordings_task;
 
 /**
@@ -112,6 +113,29 @@ function xmldb_bigbluebuttonbn_upgrade($oldversion = 0) {
 
         // Bigbluebuttonbn savepoint reached.
         upgrade_mod_savepoint(true, 2025100602, 'bigbluebuttonbn');
+    }
+
+    if ($oldversion < 2025100603) {
+        // A race condition in meeting::create_meeting() could previously allow two
+        // near-simultaneous join requests to both insert a bigbluebuttonbn_recordings row for
+        // the same underlying BigBlueButton recording (see MDL-89119). This has been fixed at
+        // the application level (see meeting::join_meeting()), but existing sites may still
+        // carry duplicate rows created before the fix.
+        //
+        // We deliberately do NOT clean this up here with an inline query: on sites with a very
+        // large bigbluebuttonbn_recordings table this could run for a long time and block the
+        // upgrade. Instead, queue an adhoc task that removes duplicates in bounded batches via
+        // cron. See classes/task/cleanup_duplicate_recordings_task.php.
+        //
+        // Follow-up (do not do in this release): once this cleanup task has had a full
+        // release cycle to run via cron on all sites, add a unique index on
+        // (bigbluebuttonbnid, groupid, recordingid) to bigbluebuttonbn_recordings in
+        // install.xml, with a matching upgrade step here, to permanently prevent duplicates at
+        // the database level as defense-in-depth.
+        \core\task\manager::queue_adhoc_task(new cleanup_duplicate_recordings_task());
+
+        // Bigbluebuttonbn savepoint reached.
+        upgrade_mod_savepoint(true, 2025100603, 'bigbluebuttonbn');
     }
 
     return true;
