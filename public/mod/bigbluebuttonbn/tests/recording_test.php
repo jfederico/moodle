@@ -119,6 +119,22 @@ final class recording_test extends \advanced_testcase {
     }
 
     /**
+     * Test that recovery does not suppress an insert failure unrelated to a concurrent insert.
+     */
+    public function test_ensure_exists_throws_unrelated_insert_failure(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $this->expectException(\dml_write_exception::class);
+        recording::ensure_exists(
+            $this->get_course()->id,
+            0,
+            str_repeat('r', 65),
+            0
+        );
+    }
+
+    /**
      * Test get description
      *
      * @covers ::get_description
