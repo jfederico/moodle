@@ -88,11 +88,12 @@ class meeting {
     /**
      * Get currently stored meeting info
      *
+     * @param bool $updatecache Whether to update the cache when fetching the information
      * @return stdClass
      */
-    public function get_meeting_info() {
-        if (!$this->meetinginfo) {
-            $this->meetinginfo = $this->do_get_meeting_info();
+    public function get_meeting_info(bool $updatecache = false) {
+        if (!$this->meetinginfo || $updatecache) {
+            $this->meetinginfo = $this->do_get_meeting_info($updatecache);
         }
         return $this->meetinginfo;
     }
