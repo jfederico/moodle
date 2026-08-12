@@ -135,6 +135,21 @@ final class recording_test extends \advanced_testcase {
     }
 
     /**
+     * Test the validation exception raised when a recording is missing required properties.
+     */
+    public function test_recording_create_throws_validation_exception(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $recording = new recording(0, (object) [
+            'courseid' => $this->get_course()->id,
+        ]);
+
+        $this->expectException(\core\invalid_persistent_exception::class);
+        $recording->create();
+    }
+
+    /**
      * Test get description
      *
      * @covers ::get_description

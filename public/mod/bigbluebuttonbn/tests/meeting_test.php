@@ -450,6 +450,31 @@ final class meeting_test extends \advanced_testcase {
     }
 
     /**
+     * Test that joining a non-recorded activity does not create a recording row.
+     */
+    public function test_join_meeting_does_not_recover_non_recorded_activity(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $bbbgenerator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+        $activity = $bbbgenerator->create_instance([
+            'course' => $this->get_course()->id,
+            'record' => 0,
+        ]);
+        $instance = instance::get_from_instanceid($activity->id);
+        $bbbgenerator->create_meeting(['instanceid' => $instance->get_instance_id()]);
+
+        meeting::join_meeting($instance, logger::ORIGIN_BASE);
+
+        $this->assertFalse(
+            $DB->record_exists('bigbluebuttonbn_recordings', ['bigbluebuttonbnid' => $activity->id]),
+            'A non-recorded activity should not have a recording row created during join'
+        );
+    }
+
+    /**
      * Send a join meeting API CALL
      *
      * @param string $url
