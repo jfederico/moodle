@@ -166,6 +166,21 @@ final class meeting_test extends \advanced_testcase {
     }
 
     /**
+     * Test that get_meeting_info can refresh a stale cached response.
+     */
+    public function test_get_meeting_info_refreshes_cache(): void {
+        $this->resetAfterTest();
+        [$meeting, , , , $activity] = $this->prepare_meeting(instance::TYPE_ALL, null, NOGROUPS, false);
+
+        $this->assertEmpty($meeting->get_meeting_info()->createtime);
+
+        $bbbgenerator = $this->getDataGenerator()->get_plugin_generator('mod_bigbluebuttonbn');
+        $bbbgenerator->create_meeting(['instanceid' => $activity->id]);
+
+        $this->assertNotEmpty($meeting->get_meeting_info(true)->createtime);
+    }
+
+    /**
      * Test can join is working for all types
      *
      * @param int $type
