@@ -79,6 +79,16 @@ class behat_mod_bigbluebuttonbn extends behat_base {
     }
 
     /**
+     * Clear server credentials to exercise the unconfigured state.
+     *
+     * @Given /^BigBlueButton server credentials are not configured$/
+     */
+    public function server_credentials_are_not_configured(): void {
+        set_config('bigbluebuttonbn_server_url', '');
+        set_config('bigbluebuttonbn_shared_secret', '');
+    }
+
+    /**
      * Return the list of exact named selectors.
      *
      * @return array
