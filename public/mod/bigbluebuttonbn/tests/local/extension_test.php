@@ -60,6 +60,11 @@ final class extension_test extends \advanced_testcase {
     public function setUp(): void {
         parent::setUp();
         $this->resetAfterTest(true);
+        $plugins = \core_plugin_manager::instance()->get_installed_plugins(extension::BBB_EXTENSION_PLUGIN_NAME);
+        foreach ($plugins as $plugin => $version) {
+            set_config('disabled', 1, extension::BBB_EXTENSION_PLUGIN_NAME . '_' . $plugin);
+        }
+        \core_plugin_manager::reset_caches();
         $this->setup_fake_plugin('simple');
         $this->resetDebugging(); // We might have debugging messages issued from setup_fake_plugin here that we need to get rid of.
     }

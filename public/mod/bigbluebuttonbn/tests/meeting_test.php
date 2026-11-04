@@ -46,6 +46,12 @@ final class meeting_test extends \advanced_testcase {
     public function setUp(): void {
         parent::setUp();
         $this->initialise_mock_server();
+        $this->resetAfterTest(true);
+        $plugins = \core_plugin_manager::instance()->get_installed_plugins('bbbext');
+        foreach ($plugins as $plugin => $version) {
+            set_config('disabled', 1, 'bbbext_' . $plugin);
+        }
+        \core_plugin_manager::reset_caches();
         // We do not force the group mode so we can change the activity group mode during test.
         $this->course = $this->getDataGenerator()->create_course(['groupmode' => SEPARATEGROUPS]);
         $this->getDataGenerator()->create_group(['name' => 'G1', 'courseid' => $this->course->id]);
