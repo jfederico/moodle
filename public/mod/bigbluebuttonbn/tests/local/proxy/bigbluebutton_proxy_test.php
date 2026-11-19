@@ -30,6 +30,8 @@ use mod_bigbluebuttonbn\test\testcase_helper_trait;
 #[\PHPUnit\Framework\Attributes\CoversClass(\mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::class)]
 #[\PHPUnit\Framework\Attributes\CoversMethod(\mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::class, 'get_poll_interval')]
+#[\PHPUnit\Framework\Attributes\CoversMethod(\mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::class, 'get_join_url')]
+#[\PHPUnit\Framework\Attributes\CoversMethod(\mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::class, 'get_guest_join_url')]
 final class bigbluebutton_proxy_test extends \advanced_testcase {
     use testcase_helper_trait;
 
@@ -63,8 +65,6 @@ final class bigbluebutton_proxy_test extends \advanced_testcase {
      * When guest access is not enabled for an instance, the join URL for a logged-in user must
      * not send guest=false, otherwise the BigBlueButton server ignores its own guestPolicy
      * setting and every logged-in user bypasses the moderator waiting room (MDL-76880).
-     *
-     * @covers  \mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::get_join_url
      */
     public function test_get_join_url_omits_guest_param_when_guest_access_disabled(): void {
         $this->resetAfterTest();
@@ -81,8 +81,6 @@ final class bigbluebutton_proxy_test extends \advanced_testcase {
     /**
      * When guest access is enabled for an instance, the join URL for a logged-in user must still
      * send guest=false so the server can tell the enrolled user apart from an external guest.
-     *
-     * @covers  \mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::get_join_url
      */
     public function test_get_join_url_sends_guest_false_when_guest_access_enabled(): void {
         global $CFG;
@@ -103,8 +101,6 @@ final class bigbluebutton_proxy_test extends \advanced_testcase {
      * The dedicated guest join URL must always mark the joining user as a guest when guest
      * access is enabled for the instance, which is the only case it can be reached in practice
      * (see mod/bigbluebuttonbn/guest.php).
-     *
-     * @covers  \mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::get_guest_join_url
      */
     public function test_get_guest_join_url_always_sends_guest_true(): void {
         global $CFG;
@@ -126,8 +122,6 @@ final class bigbluebutton_proxy_test extends \advanced_testcase {
      * mod/bigbluebuttonbn/guest.php is the only caller and it already blocks that case; the proxy
      * itself must fail loudly instead of silently building a URL that looks like an authenticated
      * join (MDL-76880).
-     *
-     * @covers  \mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy::get_guest_join_url
      */
     public function test_get_guest_join_url_throws_when_guest_access_disabled(): void {
         $this->resetAfterTest();
