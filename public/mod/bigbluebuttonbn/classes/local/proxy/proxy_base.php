@@ -17,7 +17,8 @@
 namespace mod_bigbluebuttonbn\local\proxy;
 
 use mod_bigbluebuttonbn\extension;
-use mod_bigbluebuttonbn\local\config;
+use mod_bigbluebuttonbn\local\connection;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\exceptions\bigbluebutton_exception;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\plugin;
@@ -53,15 +54,18 @@ abstract class proxy_base {
      * @param array $data
      * @param array $metadata
      * @param int|null $instanceid
+     * @param connection|null $connection server to use; by default the one for $instanceid, or the site one
      * @return string
      */
     protected static function action_url(
         string $action = '',
         array $data = [],
         array $metadata = [],
-        ?int $instanceid = null
+        ?int $instanceid = null,
+        ?connection $connection = null,
     ): string {
-        $baseurl = self::sanitized_url() . $action . '?';
+        $connection = self::get_connection($connection, $instanceid);
+        $baseurl = self::sanitized_url($connection) . $action . '?';
         ['data' => $additionaldata, 'metadata' => $additionalmetadata] =
             extension::action_url_addons($action, $data, $metadata, $instanceid);
         $data = array_merge($data, $additionaldata ?? []);
@@ -71,18 +75,57 @@ abstract class proxy_base {
             return 'meta_' . $k;
         }, array_keys($metadata)), $metadata);
         $params = http_build_query($data + $metadata);
-        $checksum = self::get_checksum($action, $params);
+        $checksum = self::get_checksum($action, $params, $connection);
         return $baseurl . $params . '&checksum=' . $checksum;
+    }
+
+    /**
+     * The connection to use when none was given explicitly.
+     *
+     * @param connection|null $connection explicit connection, if any
+     * @param int|null $instanceid the activity the request is for, if known
+     * @return connection
+     */
+    protected static function get_connection(?connection $connection = null, ?int $instanceid = null): connection {
+        if ($connection !== null) {
+            return $connection;
+        }
+        if (!empty($instanceid)) {
+            return connection_resolver::for_instance($instanceid);
+        }
+        return connection_resolver::site();
+    }
+
+    /**
+     * Cache key for data that belongs to a particular server.
+     *
+     * Data from the site server keeps its plain key, so sites using a single server see no change.
+     * Data from any other server is prefixed with that server's id, so two servers never share an entry.
+     *
+     * @param string $key the key used for the site server, for example a recording id
+     * @param connection|null $connection server the data comes from, the site one by default
+     * @return string
+     */
+    public static function get_cache_key(string $key, ?connection $connection = null): string {
+        $connection = self::get_connection($connection);
+        if ($connection->is_same_server(connection_resolver::site())) {
+            return $key;
+        }
+        return $connection->get_id() . '_' . $key;
     }
 
     /**
      * Makes sure the url used doesn't is in the format required.
      *
+     * @param connection|null $connection server to use, the site one by default
      * @return string
      */
-    protected static function sanitized_url(): string {
-        $serverurl = trim(config::get('server_url'));
-        if (PHPUNIT_TEST) {
+    protected static function sanitized_url(?connection $connection = null): string {
+        $connection = self::get_connection($connection);
+        $serverurl = trim($connection->serverurl);
+        // Unit tests talk to the mock server instead of the site server. A different server chosen by a
+        // plugin is used as given, so tests can point it at another path of the mock server.
+        if (PHPUNIT_TEST && $connection->is_same_server(connection_resolver::site())) {
             $serverurl = (new moodle_url(TEST_MOD_BIGBLUEBUTTONBN_MOCK_SERVER))->out(false);
         }
         if (substr($serverurl, -1) == '/') {
@@ -97,10 +140,11 @@ abstract class proxy_base {
     /**
      * Makes sure the shared_secret used doesn't have trailing white characters.
      *
+     * @param connection|null $connection server to use, the site one by default
      * @return string
      */
-    protected static function sanitized_secret(): string {
-        return trim(config::get('shared_secret'));
+    protected static function sanitized_secret(?connection $connection = null): string {
+        return trim(self::get_connection($connection)->sharedsecret);
     }
 
     /**
@@ -176,13 +220,15 @@ abstract class proxy_base {
      * @param array $data
      * @param array $metadata
      * @param int|null $instanceid
+     * @param connection|null $connection server to use; by default the one for $instanceid, or the site one
      * @return null|bool|\SimpleXMLElement
      */
     protected static function fetch_endpoint_xml(
         string $action,
         array $data = [],
         array $metadata = [],
-        ?int $instanceid = null
+        ?int $instanceid = null,
+        ?connection $connection = null,
     ) {
         if (PHPUNIT_TEST && !defined('TEST_MOD_BIGBLUEBUTTONBN_MOCK_SERVER')) {
             return true; // In case we still use fetch and mock server is not defined, this prevents
@@ -190,7 +236,7 @@ abstract class proxy_base {
             // for example.
         }
         $curl = new curl();
-        return $curl->get(self::action_url($action, $data, $metadata, $instanceid));
+        return $curl->get(self::action_url($action, $data, $metadata, $instanceid, $connection));
     }
 
     /**
@@ -198,9 +244,11 @@ abstract class proxy_base {
      *
      * @param string $action
      * @param string $params
+     * @param connection|null $connection server to use, the site one by default
      * @return string
      */
-    public static function get_checksum(string $action, string $params): string {
-        return hash(config::get('checksum_algorithm'), $action . $params . self::sanitized_secret());
+    public static function get_checksum(string $action, string $params, ?connection $connection = null): string {
+        $connection = self::get_connection($connection);
+        return hash($connection->checksumalgorithm, $action . $params . self::sanitized_secret($connection));
     }
 }

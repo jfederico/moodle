@@ -21,6 +21,8 @@ use context;
 use context_course;
 use context_module;
 use core\persistent;
+use mod_bigbluebuttonbn\local\connection;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\proxy\recording_proxy;
 use moodle_url;
 use stdClass;
@@ -405,7 +407,8 @@ class recording extends persistent {
             if ($metadata) {
                 recording_proxy::update_recording(
                     $this->get('recordingid'),
-                    $metadata
+                    $metadata,
+                    $this->get_server_connection()
                 );
             }
             $this->metadatachanged = false;
@@ -445,10 +448,11 @@ class recording extends persistent {
 
         $recordid = $this->get('recordingid');
         if ($recordid && !$this->get('imported')) {
-            recording_proxy::delete_recording($recordid);
+            $connection = $this->get_server_connection();
+            recording_proxy::delete_recording($recordid, $connection);
             // Delete in cache if needed.
             $cachedrecordings = cache::make('mod_bigbluebuttonbn', 'recordings');
-            $cachedrecordings->delete($recordid);
+            $cachedrecordings->delete(recording_proxy::get_cache_key($recordid, $connection));
         }
     }
 
@@ -490,7 +494,7 @@ class recording extends persistent {
     protected function set_protected($value) {
         $realvalue = $value ? "true" : "false";
         $this->metadata_set('protected', $realvalue);
-        recording_proxy::protect_recording($this->get('recordingid'), $realvalue);
+        recording_proxy::protect_recording($this->get('recordingid'), $realvalue, $this->get_server_connection());
     }
 
     /**
@@ -520,7 +524,7 @@ class recording extends persistent {
         $realvalue = $value ? "true" : "false";
         $this->metadata_set('published', $realvalue);
         // Now set this flag onto the remote bbb server.
-        recording_proxy::publish_recording($this->get('recordingid'), $realvalue);
+        recording_proxy::publish_recording($this->get('recordingid'), $realvalue, $this->get_server_connection());
     }
 
     /**
@@ -729,14 +733,19 @@ class recording extends persistent {
             $recordingsort
         );
 
-        // Grab the recording IDs.
-        $recordingids = array_values(array_map(function ($recording) {
-            return $recording->recordingid;
-        }, $recordings));
-
-        // Fetch all metadata for these recordings.
-        $metadatas = recording_proxy::fetch_recordings($recordingids);
-        $failedids = recording_proxy::fetch_missing_recordings($recordingids);
+        // Fetch all metadata for these recordings, from the server of each recording's activity.
+        $metadatas = [];
+        $failedids = [];
+        foreach (self::group_by_connection($recordings) as $group) {
+            $recordingids = array_values(array_map(function ($recording) {
+                return $recording->recordingid;
+            }, $group['records']));
+            $metadatas += recording_proxy::fetch_recordings($recordingids, $group['connection']);
+            $failedids = array_merge(
+                $failedids,
+                recording_proxy::fetch_missing_recordings($recordingids, $group['connection'])
+            );
+        }
 
         // Return the instances.
         return array_filter(array_map(function ($recording) use ($metadatas, $withindays, $failedids) {
@@ -778,7 +787,7 @@ class recording extends persistent {
         if ($this->get('imported')) {
             $this->metadata = json_decode($this->get('importeddata'), true);
         } else {
-            $this->metadata = recording_proxy::fetch_recording($this->get('recordingid'));
+            $this->metadata = recording_proxy::fetch_recording($this->get('recordingid'), $this->get_server_connection());
         }
 
         return $this->metadata;
@@ -791,7 +800,7 @@ class recording extends persistent {
      * be purged and refetched. This ensures that the url is safe for use with a protected recording.
      */
     protected function refresh_metadata_if_required() {
-        recording_proxy::purge_protected_recording($this->get('recordingid'));
+        recording_proxy::purge_protected_recording($this->get('recordingid'), $this->get_server_connection());
         $this->fetch_metadata(true);
     }
 
@@ -826,6 +835,22 @@ class recording extends persistent {
         $recordingcount = count($recordings);
         mtrace("=> Found {$recordingcount} recordings to query");
 
+        $foundcount = 0;
+        foreach (self::group_by_connection($recordings) as $group) {
+            $foundcount += self::sync_recordings_from_server($group['records'], $group['connection']);
+        }
+
+        mtrace("=> Finished processing recordings. Updated status for {$foundcount} / {$recordingcount} recordings.");
+    }
+
+    /**
+     * Update the status of recordings that are all on the same server.
+     *
+     * @param stdClass[] $recordings recording records indexed by id
+     * @param connection $connection the server they are on
+     * @return int number of recordings updated, including breakout recordings
+     */
+    protected static function sync_recordings_from_server(array $recordings, connection $connection): int {
         // Grab the recording IDs.
         $recordingids = array_map(function($recording) {
             return $recording->recordingid;
@@ -833,7 +858,7 @@ class recording extends persistent {
 
         // Fetch all metadata for these recordings.
         mtrace("=> Fetching recording metadata from server");
-        $metadatas = recording_proxy::fetch_recordings($recordingids);
+        $metadatas = recording_proxy::fetch_recordings($recordingids, $connection);
 
         $foundcount = 0;
         foreach ($metadatas as $recordingid => $metadata) {
@@ -869,6 +894,43 @@ class recording extends persistent {
             }
         }
 
-        mtrace("=> Finished processing recordings. Updated status for {$foundcount} / {$recordingcount} recordings.");
+        return $foundcount;
+    }
+
+    /**
+     * Group recording records by the server of their activity.
+     *
+     * Records whose activities use the same connection end up in the same group, so a site with a
+     * single server always gets exactly one group.
+     *
+     * @param stdClass[] $records recording records indexed by id
+     * @return array[] list of ['connection' => connection, 'records' => stdClass[] indexed by id]
+     */
+    protected static function group_by_connection(array $records): array {
+        $groups = [];
+        $connections = [];
+        foreach ($records as $id => $record) {
+            $instanceid = (int) $record->bigbluebuttonbnid;
+            if (!array_key_exists($instanceid, $connections)) {
+                $connections[$instanceid] = $instanceid
+                    ? connection_resolver::for_instance($instanceid)
+                    : connection_resolver::site();
+            }
+            $connection = $connections[$instanceid];
+            $key = sha1(implode("\n", [$connection->serverurl, $connection->sharedsecret, $connection->checksumalgorithm]));
+            $groups[$key]['connection'] = $connection;
+            $groups[$key]['records'][$id] = $record;
+        }
+        return array_values($groups);
+    }
+
+    /**
+     * The server this recording is on: the one used by its activity.
+     *
+     * @return connection
+     */
+    protected function get_server_connection(): connection {
+        $instanceid = (int) $this->get('bigbluebuttonbnid');
+        return $instanceid ? connection_resolver::for_instance($instanceid) : connection_resolver::site();
     }
 }

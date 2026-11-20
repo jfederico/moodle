@@ -28,6 +28,7 @@
 use mod_bigbluebuttonbn\extension;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\logger;
@@ -66,7 +67,7 @@ if ($groupid) {
 logger::log_instance_viewed($instance);
 
 // If the server credentials are not configured yet, render a neutral state page and stop.
-if (empty(config::get('server_url')) || empty(config::get('shared_secret'))) {
+if (!connection_resolver::for_instance($instance)->is_configured()) {
     $PAGE->set_url($instance->get_view_url());
     $PAGE->set_title($cm->name);
     $PAGE->set_cacheable(false);
@@ -107,7 +108,7 @@ try {
 echo $OUTPUT->header();
 
 // Valid credentials have not been setup, then we output a message to teachers and admin.
-if (config::server_credentials_invalid()) {
+if (config::server_credentials_invalid(connection_resolver::for_instance($instance))) {
     if (has_capability('moodle/site:config', context_system::instance())) {
         $settingslink = new moodle_url('/admin/settings.php', ['section' => 'modsettingbigbluebuttonbn']);
         echo $OUTPUT->notification(get_string('settings_credential_warning', 'bigbluebuttonbn',

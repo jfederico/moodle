@@ -354,7 +354,7 @@ class meeting {
         $defaultcacheinfo = ['creation_time' => time(), 'meeting_info' => '[]'];
         // Pings again and refreshes the cache.
         try {
-            $meetinginfo = bigbluebutton_proxy::get_meeting_info($meetingid);
+            $meetinginfo = bigbluebutton_proxy::get_meeting_info($meetingid, $instance->get_instance_id());
             $cache->set($meetingid, ['creation_time' => time(), 'meeting_info' => json_encode($meetinginfo)]);
         } catch (bigbluebutton_exception $e) {
             // The meeting is not created on BBB side, so we set the value in the cache so we don't poll again

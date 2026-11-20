@@ -56,12 +56,16 @@ class mod_bigbluebuttonbn_mod_form extends moodleform_mod {
         $mform = &$this->_form;
 
         // Validates if the BigBlueButton server is running.
-        $serverurl = (string) \mod_bigbluebuttonbn\local\config::get('server_url');
-        $sharedsecret = (string) \mod_bigbluebuttonbn\local\config::get('shared_secret');
+        // The form is also built for course reset, where the instance is a record rather than an id.
+        $instanceid = is_object($this->_instance) ? (int) ($this->_instance->id ?? 0) : (int) $this->_instance;
+        $connection = $instanceid
+            ? \mod_bigbluebuttonbn\local\connection_resolver::for_instance($instanceid)
+            : \mod_bigbluebuttonbn\local\connection_resolver::for_course((int) $this->get_course()->id);
+        $serverurl = $connection->serverurl;
         if (
             $serverurl !== '' &&
-            $sharedsecret !== '' &&
-            bigbluebutton_proxy::get_server_version() === null
+            $connection->sharedsecret !== '' &&
+            bigbluebutton_proxy::get_server_version($connection) === null
         ) {
             throw new moodle_exception('general_error_unable_connect',
                 'bigbluebuttonbn',

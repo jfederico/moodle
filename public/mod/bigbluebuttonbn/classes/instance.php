@@ -1118,7 +1118,7 @@ EOF;
      * @return bool
      */
     public function is_blindside_network_server(): bool {
-        return bigbluebutton_proxy::is_bn_server();
+        return bigbluebutton_proxy::is_bn_server(\mod_bigbluebuttonbn\local\connection_resolver::for_instance($this));
     }
 
     /**

@@ -18,6 +18,7 @@ namespace mod_bigbluebuttonbn\output;
 
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\bigbluebutton\recordings\recording_data;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\recording;
 use renderable;
@@ -70,7 +71,10 @@ class recording_row_preview implements renderable, templatable {
             if (isset($playback['preview'])) {
                 foreach ($playback['preview'] as $image) {
                     $url = trim($image['url']);
-                    $validated = bigbluebutton_proxy::is_remote_resource_valid($url);
+                    $validated = bigbluebutton_proxy::is_remote_resource_valid(
+                        $url,
+                        connection_resolver::for_instance((int) $this->recording->get('bigbluebuttonbnid'))
+                    );
                     if ($validated) {
                         $thumbnails[] = $url . '?' . time();
                     }
