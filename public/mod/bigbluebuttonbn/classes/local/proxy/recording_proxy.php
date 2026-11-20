@@ -18,6 +18,7 @@ namespace mod_bigbluebuttonbn\local\proxy;
 
 use cache;
 use cache_helper;
+use mod_bigbluebuttonbn\local\connection;
 use SimpleXMLElement;
 
 /**
@@ -38,19 +39,24 @@ class recording_proxy extends proxy_base {
      * Invalidate the MUC cache for the specified recording.
      *
      * @param string $recordid
+     * @param connection|null $connection server the recording is on, the site one by default
      */
-    protected static function invalidate_cache_for_recording(string $recordid): void {
-        cache_helper::invalidate_by_event('mod_bigbluebuttonbn/recordingchanged', [$recordid]);
+    protected static function invalidate_cache_for_recording(string $recordid, ?connection $connection = null): void {
+        cache_helper::invalidate_by_event(
+            'mod_bigbluebuttonbn/recordingchanged',
+            [self::get_cache_key($recordid, $connection)]
+        );
     }
 
     /**
      * Perform deleteRecordings on BBB.
      *
      * @param string $recordid a recording id
+     * @param connection|null $connection server the recording is on, the site one by default
      * @return bool
      */
-    public static function delete_recording(string $recordid): bool {
-        $result = self::fetch_endpoint_xml('deleteRecordings', ['recordID' => $recordid]);
+    public static function delete_recording(string $recordid, ?connection $connection = null): bool {
+        $result = self::fetch_endpoint_xml('deleteRecordings', ['recordID' => $recordid], [], null, $connection);
         if (!$result || $result->returncode != 'SUCCESS') {
             return false;
         }
@@ -62,15 +68,20 @@ class recording_proxy extends proxy_base {
      *
      * @param string $recordid
      * @param string $publish
+     * @param connection|null $connection server the recording is on, the site one by default
      * @return bool
      */
-    public static function publish_recording(string $recordid, string $publish = 'true'): bool {
+    public static function publish_recording(
+        string $recordid,
+        string $publish = 'true',
+        ?connection $connection = null,
+    ): bool {
         $result = self::fetch_endpoint_xml('publishRecordings', [
             'recordID' => $recordid,
             'publish' => $publish,
-        ]);
+        ], [], null, $connection);
 
-        self::invalidate_cache_for_recording($recordid);
+        self::invalidate_cache_for_recording($recordid, $connection);
 
         if (!$result || $result->returncode != 'SUCCESS') {
             return false;
@@ -84,9 +95,14 @@ class recording_proxy extends proxy_base {
      *
      * @param string $recordid
      * @param string $protected
+     * @param connection|null $connection server the recording is on, the site one by default
      * @return bool
      */
-    public static function protect_recording(string $recordid, string $protected = 'true'): bool {
+    public static function protect_recording(
+        string $recordid,
+        string $protected = 'true',
+        ?connection $connection = null,
+    ): bool {
         global $CFG;
 
         // Ignore action if recording_protect_editable is set to false.
@@ -97,9 +113,9 @@ class recording_proxy extends proxy_base {
         $result = self::fetch_endpoint_xml('updateRecordings', [
             'recordID' => $recordid,
             'protect' => $protected,
-        ]);
+        ], [], null, $connection);
 
-        self::invalidate_cache_for_recording($recordid);
+        self::invalidate_cache_for_recording($recordid, $connection);
 
         if (!$result || $result->returncode != 'SUCCESS') {
             return false;
@@ -113,13 +129,15 @@ class recording_proxy extends proxy_base {
      *
      * @param string $recordid a single record identifier
      * @param array $params ['key'=>param_key, 'value']
+     * @param connection|null $connection server the recording is on, the site one by default
+     * @return bool
      */
-    public static function update_recording(string $recordid, array $params): bool {
+    public static function update_recording(string $recordid, array $params, ?connection $connection = null): bool {
         $result = self::fetch_endpoint_xml('updateRecordings', array_merge([
             'recordID' => $recordid
-        ], $params));
+        ], $params), [], null, $connection);
 
-        self::invalidate_cache_for_recording($recordid);
+        self::invalidate_cache_for_recording($recordid, $connection);
 
         return $result ? $result->returncode == 'SUCCESS' : false;
     }
@@ -128,10 +146,11 @@ class recording_proxy extends proxy_base {
      * Helper function to fetch a single recording from a BigBlueButton server.
      *
      * @param string $recordingid
+     * @param connection|null $connection server the recording is on, the site one by default
      * @return null|array
      */
-    public static function fetch_recording(string $recordingid): ?array {
-        $data = self::fetch_recordings([$recordingid]);
+    public static function fetch_recording(string $recordingid, ?connection $connection = null): ?array {
+        $data = self::fetch_recordings([$recordingid], $connection);
 
         if (array_key_exists($recordingid, $data)) {
             return $data[$recordingid];
@@ -144,11 +163,13 @@ class recording_proxy extends proxy_base {
      * Check whether the current recording is a protected recording and purge the cache if necessary.
      *
      * @param string $recordingid
+     * @param connection|null $connection server the recording is on, the site one by default
      */
-    public static function purge_protected_recording(string $recordingid): void {
+    public static function purge_protected_recording(string $recordingid, ?connection $connection = null): void {
         $cache = cache::make('mod_bigbluebuttonbn', 'recordings');
+        $cachekey = self::get_cache_key($recordingid, $connection);
 
-        $recording = $cache->get($recordingid);
+        $recording = $cache->get($cachekey);
         if (empty($recording)) {
             // This value was not cached to begin with.
             return;
@@ -156,12 +177,12 @@ class recording_proxy extends proxy_base {
 
         if (array_key_exists('protected', $recording) && $recording['protected'] === 'true') {
             // This item is protected. Purge it from the cache.
-            $cache->delete($recordingid);
+            $cache->delete($cachekey);
             return;
         }
 
         $currentfetchcache = cache::make('mod_bigbluebuttonbn', 'currentfetch');
-        if ($currentfetchcache->has($recordingid)) {
+        if ($currentfetchcache->has($cachekey)) {
             // This item was fetched in the current request.
             return;
         }
@@ -172,24 +193,40 @@ class recording_proxy extends proxy_base {
      *
      * We use a cache to store recording indexed by keyids/recordingID.
      * @param array $keyids list of recordingids
+     * @param connection|null $connection server the recording is on, the site one by default
      * @return array (associative) with recordings indexed by recordID, each recording is a non sequential array
      *  and sorted by {@see recording_proxy::sort_recordings}
      */
-    public static function fetch_recordings(array $keyids = []): array {
+    public static function fetch_recordings(array $keyids = [], ?connection $connection = null): array {
         $recordings = [];
 
         // If $ids is empty return array() to prevent a getRecordings with meetingID and recordID set to ''.
         if (empty($keyids)) {
             return $recordings;
         }
+        $connection = self::get_connection($connection);
         $cache = cache::make('mod_bigbluebuttonbn', 'recordings');
         $currentfetchcache = cache::make('mod_bigbluebuttonbn', 'currentfetch');
-        $recordings = array_filter($cache->get_many($keyids));
-        $missingkeys = array_diff(array_values($keyids), array_keys($recordings));
 
-        $recordings += self::do_fetch_recordings($missingkeys);
-        $cache->set_many($recordings);
-        $currentfetchcache->set_many(array_flip(array_keys($recordings)));
+        // Cache keys are the recording ids for the site server, and are prefixed for any other server.
+        $keyids = array_values($keyids);
+        $cachekeys = array_map(fn($keyid) => self::get_cache_key((string) $keyid, $connection), $keyids);
+        $cached = $cache->get_many($cachekeys);
+        foreach ($cachekeys as $index => $cachekey) {
+            if (!empty($cached[$cachekey])) {
+                $recordings[$keyids[$index]] = $cached[$cachekey];
+            }
+        }
+        $missingkeys = array_diff($keyids, array_keys($recordings));
+
+        $recordings += self::do_fetch_recordings($missingkeys, 'recordID', $connection);
+
+        $tocache = [];
+        foreach ($recordings as $recordingid => $recording) {
+            $tocache[self::get_cache_key((string) $recordingid, $connection)] = $recording;
+        }
+        $cache->set_many($tocache);
+        $currentfetchcache->set_many(array_flip(array_keys($tocache)));
         return $recordings;
     }
 
@@ -197,10 +234,11 @@ class recording_proxy extends proxy_base {
      * Helper function to retrieve recordings that failed to be fetched from a BigBlueButton server.
      *
      * @param array $keyids list of recordingids
+     * @param connection|null $connection server the recording is on, the site one by default
      * @return array array of recording recordingids not fetched from server
      *  and sorted by {@see recording_proxy::sort_recordings}
      */
-    public static function fetch_missing_recordings(array $keyids = []): array {
+    public static function fetch_missing_recordings(array $keyids = [], ?connection $connection = null): array {
         $unfetchedids = [];
         $pagesize = 25;
         // If $ids is empty return array() to prevent a getRecordings with meetingID and recordID set to ''.
@@ -209,7 +247,13 @@ class recording_proxy extends proxy_base {
         }
         while ($ids = array_splice($keyids, 0, $pagesize)) {
             // We make getRecordings API call to check recordings are successfully retrieved.
-            $xml = self::fetch_endpoint_xml('getRecordings', ['recordID' => implode(',', $ids), 'state' => 'any']);
+            $xml = self::fetch_endpoint_xml(
+                'getRecordings',
+                ['recordID' => implode(',', $ids), 'state' => 'any'],
+                [],
+                null,
+                $connection
+            );
             if (!$xml || $xml->returncode != 'SUCCESS' || !isset($xml->recordings)) {
                 $unfetchedids = array_merge($unfetchedids, $ids);
                 continue; // We will keep record of all unfetched ids.
@@ -222,17 +266,18 @@ class recording_proxy extends proxy_base {
      * Helper function to fetch recordings from a BigBlueButton server.
      *
      * @param array $keyids list of meetingids
+     * @param connection|null $connection server the meetings were held on, the site one by default
      * @return array (associative) with recordings indexed by recordID, each recording is a non sequential array
      *  and sorted by {@see recording_proxy::sort_recordings}
      */
-    public static function fetch_recording_by_meeting_id(array $keyids = []): array {
+    public static function fetch_recording_by_meeting_id(array $keyids = [], ?connection $connection = null): array {
         $recordings = [];
 
         // If $ids is empty return array() to prevent a getRecordings with meetingID and recordID set to ''.
         if (empty($keyids)) {
             return $recordings;
         }
-        $recordings = self::do_fetch_recordings($keyids, 'meetingID');
+        $recordings = self::do_fetch_recordings($keyids, 'meetingID', $connection);
         return $recordings;
     }
 
@@ -241,14 +286,19 @@ class recording_proxy extends proxy_base {
      *
      * @param array $keyids list of meetingids or recordingids
      * @param string $key the param name used for the BBB request (<recordID>|meetingID)
+     * @param connection|null $connection server to ask, the site one by default
      * @return array (associative) with recordings indexed by recordID, each recording is a non sequential array.
      *  and sorted {@see recording_proxy::sort_recordings}
      */
-    private static function do_fetch_recordings(array $keyids = [], string $key = 'recordID'): array {
+    private static function do_fetch_recordings(
+        array $keyids = [],
+        string $key = 'recordID',
+        ?connection $connection = null,
+    ): array {
         $recordings = [];
         $pagesize = 25;
         while ($ids = array_splice($keyids, 0, $pagesize)) {
-            $fetchrecordings = self::fetch_recordings_page($ids, $key);
+            $fetchrecordings = self::fetch_recordings_page($ids, $key, $connection);
             $recordings += $fetchrecordings;
         }
         // Sort recordings.
@@ -259,11 +309,18 @@ class recording_proxy extends proxy_base {
      *
      * @param array $ids
      * @param string $key
+     * @param connection|null $connection server to ask, the site one by default
      * @return array
      */
-    private static function fetch_recordings_page(array $ids, $key = 'recordID'): array {
+    private static function fetch_recordings_page(array $ids, $key = 'recordID', ?connection $connection = null): array {
         // The getRecordings call is executed using a method GET (supported by all versions of BBB).
-        $xml = self::fetch_endpoint_xml('getRecordings', [$key => implode(',', $ids), 'state' => 'any']);
+        $xml = self::fetch_endpoint_xml(
+            'getRecordings',
+            [$key => implode(',', $ids), 'state' => 'any'],
+            [],
+            null,
+            $connection
+        );
 
         if (!$xml) {
             return [];
@@ -289,7 +346,13 @@ class recording_proxy extends proxy_base {
                     $breakoutrooms[] = trim((string) $breakoutroom);
                 }
                 if ($breakoutrooms) {
-                    $xml = self::fetch_endpoint_xml('getRecordings', ['recordID' => implode(',', $breakoutrooms)]);
+                    $xml = self::fetch_endpoint_xml(
+                        'getRecordings',
+                        ['recordID' => implode(',', $breakoutrooms)],
+                        [],
+                        null,
+                        $connection
+                    );
                     if ($xml && $xml->returncode == 'SUCCESS' && isset($xml->recordings)) {
                         // If there were already created meetings.
                         foreach ($xml->recordings->recording as $subrecordingxml) {

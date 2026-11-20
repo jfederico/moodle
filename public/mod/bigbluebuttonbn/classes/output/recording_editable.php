@@ -21,6 +21,7 @@ use moodle_exception;
 use core\output\inplace_editable;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\bigbluebutton\recordings\recording_action;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\proxy\bigbluebutton_proxy;
 use mod_bigbluebuttonbn\local\proxy\recording_proxy;
 use mod_bigbluebuttonbn\recording;
@@ -133,6 +134,7 @@ abstract class recording_editable extends \core\output\inplace_editable {
     protected function row_editable() {
         // Since the request to BBB are cached, it is safe to use the wrapper to check the server version.
         return $this->instance->can_manage_recordings()
-            && (bigbluebutton_proxy::get_server_version() >= 1.0 || $this->instance->is_blindside_network_server());
+            && (bigbluebutton_proxy::get_server_version(connection_resolver::for_instance($this->instance)) >= 1.0
+                || $this->instance->is_blindside_network_server());
     }
 }

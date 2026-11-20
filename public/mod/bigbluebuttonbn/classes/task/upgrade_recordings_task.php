@@ -20,6 +20,8 @@ use core\task\adhoc_task;
 use core\task\manager;
 use Matrix\Exception;
 use mod_bigbluebuttonbn\instance;
+use mod_bigbluebuttonbn\local\connection;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\proxy\recording_proxy;
 use mod_bigbluebuttonbn\logger;
 use mod_bigbluebuttonbn\recording;
@@ -41,6 +43,30 @@ class upgrade_recordings_task extends adhoc_task {
         $meetingid = $info->meetingid;
         $isimported = $info->isimported ?? 0;
         $this->process_bigbluebuttonbn_logs($meetingid, $isimported);
+    }
+
+    /**
+     * The server of the activity that held a meeting, or the site server if the activity is unknown.
+     *
+     * This deliberately avoids {@see instance::get_from_meetingid()}, which reports missing activities through
+     * debugging, as old logs often refer to activities that no longer exist.
+     *
+     * @param string $meetingid
+     * @return connection
+     */
+    protected function get_connection_for_meeting(string $meetingid): connection {
+        global $DB;
+
+        try {
+            $matches = instance::parse_meetingid($meetingid);
+        } catch (\moodle_exception $e) {
+            return connection_resolver::site();
+        }
+        $instanceid = $DB->get_field('bigbluebuttonbn', 'id', ['meetingid' => $matches['meetingid']]);
+        if (!$instanceid && $DB->record_exists('bigbluebuttonbn', ['id' => $matches['instanceid']])) {
+            $instanceid = $matches['instanceid'];
+        }
+        return $instanceid ? connection_resolver::for_instance((int) $instanceid) : connection_resolver::site();
     }
 
     /**
@@ -73,8 +99,11 @@ class upgrade_recordings_task extends adhoc_task {
             // No more logs. Stop queueing.
             return false;
         }
-        // Retrieve recordings from the servers for this meeting.
-        $recordings = recording_proxy::fetch_recording_by_meeting_id([$meetingid]);
+        // Retrieve recordings from the server of the activity that held this meeting.
+        $recordings = recording_proxy::fetch_recording_by_meeting_id(
+            [$meetingid],
+            $this->get_connection_for_meeting($meetingid)
+        );
         // Sort recordings by meetingId, then startTime.
         uasort($recordings, function($a, $b) {
             return $b['startTime'] - $a['startTime'];
