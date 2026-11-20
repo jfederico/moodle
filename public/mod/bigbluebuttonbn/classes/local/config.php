@@ -180,11 +180,13 @@ class config {
     /**
      * Check if bbb server credentials are invalid.
      *
+     * @param connection|null $connection server to check, the site one by default
      * @return bool
      */
-    public static function server_credentials_invalid(): bool {
+    public static function server_credentials_invalid(?connection $connection = null): bool {
         // Test server credentials across all versions of the plugin are flagged.
-        $parsedurl = parse_url(self::get('server_url'));
+        $serverurl = $connection ? $connection->serverurl : self::get('server_url');
+        $parsedurl = parse_url($serverurl);
         $defaultserverurl = parse_url(self::DEFAULT_SERVER_URL);
         if (!isset($parsedurl['host'])) {
             return false;

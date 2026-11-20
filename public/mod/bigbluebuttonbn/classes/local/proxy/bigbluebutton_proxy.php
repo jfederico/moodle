@@ -22,6 +22,8 @@ use Exception;
 use mod_bigbluebuttonbn\completion\custom_completion;
 use mod_bigbluebuttonbn\instance;
 use mod_bigbluebuttonbn\local\config;
+use mod_bigbluebuttonbn\local\connection;
+use mod_bigbluebuttonbn\local\connection_resolver;
 use mod_bigbluebuttonbn\local\exceptions\bigbluebutton_exception;
 use mod_bigbluebuttonbn\local\exceptions\server_not_available_exception;
 use moodle_url;
@@ -145,14 +147,17 @@ class bigbluebutton_proxy extends proxy_base {
     /**
      * Perform api request on BBB.
      *
+     * @param connection|null $connection server to ask, the site one by default
      * @return null|string
      */
-    public static function get_server_version(): ?string {
+    public static function get_server_version(?connection $connection = null): ?string {
+        $connection = self::get_connection($connection);
         $cache = cache::make('mod_bigbluebuttonbn', 'serverinfo');
-        $serverversion = $cache->get('serverversion');
+        $cachekey = self::get_cache_key('serverversion', $connection);
+        $serverversion = $cache->get($cachekey);
 
         if (!$serverversion) {
-            $xml = self::fetch_endpoint_xml('');
+            $xml = self::fetch_endpoint_xml('', [], [], null, $connection);
             if (!$xml || $xml->returncode != 'SUCCESS') {
                 return null;
             }
@@ -162,7 +167,7 @@ class bigbluebutton_proxy extends proxy_base {
             }
 
             $serverversion = (string) $xml->version;
-            $cache->set('serverversion', $serverversion);
+            $cache->set($cachekey, $serverversion);
         }
 
         return (float) $serverversion;
@@ -211,11 +216,12 @@ class bigbluebutton_proxy extends proxy_base {
      * Helper function validates a remote resource.
      *
      * @param string $url
+     * @param connection|null $connection server the resource is expected to come from, the site one by default
      * @return bool
      */
-    public static function is_remote_resource_valid(string $url): bool {
+    public static function is_remote_resource_valid(string $url, ?connection $connection = null): bool {
         $urlhost = parse_url($url, PHP_URL_HOST);
-        $serverurlhost = parse_url(\mod_bigbluebuttonbn\local\config::get('server_url'), PHP_URL_HOST);
+        $serverurlhost = parse_url(self::get_connection($connection)->serverurl, PHP_URL_HOST);
 
         if ($urlhost == $serverurlhost) {
             // Skip validation when the recording URL host is the same as the configured BBB server.
@@ -403,7 +409,7 @@ class bigbluebutton_proxy extends proxy_base {
     public static function require_working_server(instance $instance): void {
         $version = null;
         try {
-            $version = self::get_server_version();
+            $version = self::get_server_version(connection_resolver::for_instance($instance));
         } catch (server_not_available_exception $e) {
             self::handle_server_not_available($instance);
         }
@@ -534,13 +540,14 @@ class bigbluebutton_proxy extends proxy_base {
     /**
      * Helper evaluates if the bigbluebutton server used belongs to blindsidenetworks domain.
      *
+     * @param connection|null $connection server to check, the site one by default
      * @return bool
      */
-    public static function is_bn_server() {
+    public static function is_bn_server(?connection $connection = null) {
         if (config::get('bn_server')) {
             return true;
         }
-        $parsedurl = parse_url(config::get('server_url'));
+        $parsedurl = parse_url(self::get_connection($connection)->serverurl);
         if (!isset($parsedurl['host'])) {
             return false;
         }

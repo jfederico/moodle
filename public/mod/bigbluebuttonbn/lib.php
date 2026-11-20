@@ -92,9 +92,7 @@ function bigbluebuttonbn_get_course_content_items(
     \stdClass $user,
     \stdClass $course
 ): array {
-    $serverurl = config::get('server_url');
-    $sharedsecret = config::get('shared_secret');
-    if (empty($serverurl) || empty($sharedsecret)) {
+    if (!\mod_bigbluebuttonbn\local\connection_resolver::for_course((int) $course->id)->is_configured()) {
         if (has_capability('moodle/site:config', \context_system::instance(), $user)) {
             $reason = get_string('unconfigured_chooser_admin', 'mod_bigbluebuttonbn');
         } else {
@@ -568,7 +566,8 @@ function mod_bigbluebuttonbn_core_calendar_provide_event_action(
     $meetinginfo = null;
     // Check first if the server can be contacted.
     try {
-        if (empty(bigbluebutton_proxy::get_server_version())) {
+        $connection = \mod_bigbluebuttonbn\local\connection_resolver::for_instance($instance);
+        if (empty(bigbluebutton_proxy::get_server_version($connection))) {
             // In this case we should already have debugging message printed.
             return null;
         }
