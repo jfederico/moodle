@@ -93,4 +93,41 @@ final class recording_proxy_test extends \advanced_testcase {
         $recordings = recording_proxy::fetch_recordings([$recordingsid[0]]);
         $this->assertCount(3, $recordings);
     }
+
+    /**
+     * Recordings fetched without a server come from the server of their activity.
+     */
+    public function test_fetch_recordings_from_activity_server(): void {
+        $this->resetAfterTest();
+        $this->initialise_mock_server();
+        [, , $bbbactivity] = $this->create_instance();
+        $instance = instance::get_from_instanceid($bbbactivity->id);
+        $recordings = $this->create_recordings_for_instance($instance, [['name' => 'Recording 1']]);
+        $recordingids = array_values(array_map(fn($r) => $r->recordingid, $recordings));
+        $this->assertCount(1, recording_proxy::fetch_recordings($recordingids));
+
+        // Send the activity to another path of the mock server, which does not have the recording.
+        $mockurl = TEST_MOD_BIGBLUEBUTTONBN_MOCK_SERVER;
+        $otherurl = preg_replace('#/[^/]+/?$#', '/' . sha1('another server'), $mockurl);
+        $this->redirectHook(
+            \mod_bigbluebuttonbn\hook\resolve_connection::class,
+            function (\mod_bigbluebuttonbn\hook\resolve_connection $hook) use ($instance, $otherurl): void {
+                if ($hook->courseid == $instance->get_course_id()) {
+                    $hook->set_connection(new \mod_bigbluebuttonbn\local\connection(
+                        $otherurl,
+                        \mod_bigbluebuttonbn\local\config::get('shared_secret'),
+                        \mod_bigbluebuttonbn\local\config::get('checksum_algorithm')
+                    ));
+                }
+            }
+        );
+        \cache::make_from_params(\cache_store::MODE_REQUEST, 'mod_bigbluebuttonbn', 'connections')->purge();
+
+        $this->assertCount(0, recording_proxy::fetch_recordings($recordingids));
+        // The site server still has it.
+        $this->assertCount(1, recording_proxy::fetch_recordings(
+            $recordingids,
+            \mod_bigbluebuttonbn\local\connection_resolver::site()
+        ));
+    }
 }

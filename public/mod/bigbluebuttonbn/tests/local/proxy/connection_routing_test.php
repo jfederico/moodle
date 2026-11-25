@@ -224,4 +224,72 @@ final class connection_routing_test extends \advanced_testcase {
         $this->assertEquals($this->other, $groups[1]['connection']);
         $this->assertSame([12], array_keys($groups[1]['records']));
     }
+
+    /**
+     * Callers that give no server get the server of each recording's activity, or the site server.
+     */
+    public function test_group_by_recording_server(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $sitecourse = $generator->create_course();
+        $othercourse = $generator->create_course();
+        [, , $siteactivity] = $this->create_instance($sitecourse);
+        [, , $otheractivity] = $this->create_instance($othercourse);
+        $add = function (\stdClass $activity, string $recordingid, int $imported) use ($DB): void {
+            $DB->insert_record('bigbluebuttonbn_recordings', [
+                'courseid' => $activity->course,
+                'bigbluebuttonbnid' => $activity->id,
+                'recordingid' => $recordingid,
+                'imported' => $imported,
+                'status' => recording::RECORDING_STATUS_PROCESSED,
+                'timecreated' => time(),
+                'timemodified' => time(),
+                'usermodified' => 0,
+            ]);
+        };
+        $add($siteactivity, 'site-1', 0);
+        $add($otheractivity, 'other-1', 0);
+        // A copy of other-1 imported into the site activity: the recording stays on the other server.
+        $add($siteactivity, 'other-1', 1);
+        $method = new \ReflectionMethod(recording_proxy::class, 'group_by_recording_server');
+
+        // With a single server, everything is one group on the site server.
+        $groups = $method->invoke(null, ['site-1', 'other-1', 'unknown']);
+        $this->assertCount(1, $groups);
+        $this->assertEquals(connection_resolver::site(), $groups[0]['connection']);
+        $this->assertSame(['site-1', 'other-1', 'unknown'], $groups[0]['ids']);
+
+        \cache::make_from_params(\cache_store::MODE_REQUEST, 'mod_bigbluebuttonbn', 'connections')->purge();
+        $this->use_other_server_for_course((int) $othercourse->id);
+        $groups = $method->invoke(null, ['site-1', 'other-1', 'unknown', 'site-1']);
+        $this->assertCount(2, $groups);
+        $this->assertEquals(connection_resolver::site(), $groups[0]['connection']);
+        $this->assertSame(['site-1', 'unknown'], $groups[0]['ids']);
+        $this->assertEquals($this->other, $groups[1]['connection']);
+        $this->assertSame(['other-1'], $groups[1]['ids']);
+    }
+
+    /**
+     * A request for a recording without a server goes to the server of the recording's activity.
+     */
+    public function test_recording_request_without_connection(): void {
+        global $DB;
+        $course = $this->getDataGenerator()->create_course();
+        [, , $activity] = $this->create_instance($course);
+        $DB->insert_record('bigbluebuttonbn_recordings', [
+            'courseid' => $course->id,
+            'bigbluebuttonbnid' => $activity->id,
+            'recordingid' => 'rec-1',
+            'imported' => 0,
+            'status' => recording::RECORDING_STATUS_PROCESSED,
+            'timecreated' => time(),
+            'timemodified' => time(),
+            'usermodified' => 0,
+        ]);
+        $this->use_other_server_for_course((int) $course->id);
+
+        $method = new \ReflectionMethod(recording_proxy::class, 'get_recording_connection');
+        $this->assertEquals($this->other, $method->invoke(null, 'rec-1'));
+        $this->assertEquals(connection_resolver::site(), $method->invoke(null, 'not-on-this-site'));
+    }
 }
